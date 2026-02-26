@@ -3,6 +3,8 @@
 Я бот для управления подписками.",
     "btn_web_app": "🌐 Открыть приложение",
     "btn_my_subscriptions": "📦 Мои подписки",
+    "no_active_subscriptions": "У вас пока нет активных подписок.",
+    "active_subscriptions_list": "📋 Ваши активные подписки:",
     "btn_support": "🆘 Поддержка",
     "btn_balance": "💰 Мой баланс",
     "balance_info": "👤 Ваш профиль:\n\nID: {id}\nБаланс: {balance} Ⓜ️\n\nПриглашайте друзей и получайте 5% от их оплат в Ⓜ️!",

@@ -7,112 +7,118 @@ const API_URL = window.location.origin.includes('localhost:5173') ? 'http://loca
 const ClientZone = () => {
   const { t } = useTranslation();
   const [tariffs, setTariffs] = useState<any[]>([]);
-  const [coupon, setCoupon] = useState('');
   const [tgUser, setTgUser] = useState<any>(null);
+  const [botUsername, setBotUsername] = useState('bot');
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg) { tg.ready(); setTgUser(tg.initDataUnsafe?.user); }
     fetch(`${API_URL}/tariffs`).then(res => res.json()).then(data => setTariffs(Array.isArray(data) ? data : []));
+    fetch(`${API_URL}/config`).then(res => res.json()).then(data => setBotUsername(data.bot_username));
   }, []);
 
-  const handlePay = (tariffId: number) => {
+  const handlePay = (t_id: number) => {
     fetch(`${API_URL}/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tariff_id: tariffId, user_id: tgUser?.id || 12345, coupon_code: coupon, use_balance: true })
-    }).then(res => res.json()).then(data => { 
-        if(data.payment_url) window.location.href = data.payment_url; 
-        else alert(data.message || 'Activated!');
-    });
+        body: JSON.stringify({ tariff_id: t_id, user_id: tgUser?.id || 12345, use_balance: true })
+    }).then(res => res.json()).then(data => { if(data.payment_url) window.location.href = data.payment_url; });
   };
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-black mb-6 text-center tracking-tighter uppercase">{t('welcome')}</h1>
-      <div className="bg-neutral-900 p-6 rounded-2xl shadow-xl border border-white/5">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><span className="w-2 h-6 bg-blue-500 rounded-full"></span>{t('tariffs')}</h2>
-        <div className="grid gap-4">
-            {tariffs.map(tariff => (
-              <div key={tariff.id} className="p-4 bg-white/5 rounded-xl flex justify-between items-center transition">
+      <h1 className="text-3xl font-black mb-6 text-center uppercase tracking-tighter">{t('welcome')}</h1>
+      <div className="bg-neutral-900 p-6 rounded-3xl border border-white/5 shadow-2xl">
+        <h2 className="text-lg font-bold mb-4 uppercase text-blue-500 tracking-widest flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-blue-500 rounded-full"></span> {t('tariffs')}
+        </h2>
+        <div className="grid gap-3">
+            {tariffs.map(t_item => (
+              <div key={t_item.id} className="p-4 bg-white/[0.03] rounded-2xl flex justify-between items-center border border-white/5 hover:border-white/10 transition">
                   <div>
-                    <div className="font-bold text-lg">{tariff.title}</div>
-                    {tariff.trial_days > 0 && <div className="text-[10px] text-green-500 font-bold uppercase">Free {tariff.trial_days} days trial</div>}
+                    <div className="font-bold text-lg">{t_item.title}</div>
+                    <div className="text-[10px] text-neutral-500 uppercase font-black">{t_item.duration_days} days access</div>
                   </div>
-                  <button onClick={() => handlePay(tariff.id)} className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl font-bold transition">
-                    {tariff.price} {tariff.currency}
+                  <button onClick={() => handlePay(t_item.id)} className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
+                    {t_item.price} {t_item.currency}
                   </button>
               </div>))}
         </div>
+      </div>
+      <div className="mt-8 p-4 bg-white/5 rounded-2xl text-center">
+          <div className="text-[10px] font-bold text-neutral-500 uppercase mb-1">Your Referral Link (5% Bonus)</div>
+          <div className="text-xs font-mono text-blue-400 break-all">https://t.me/{botUsername}?start=ref_{tgUser?.id || 'id'}</div>
       </div>
     </div>
   );
 };
 
-const ManageUsers = ({ token }: { token: string }) => {
-    const [users, setUsers] = useState<any[]>([]);
-    const fetchUsers = () => fetch(`${API_URL}/admin/users`, { headers: { 'Authorization': `Bearer ${token}` }}).then(res => res.json()).then(data => setUsers(Array.isArray(data) ? data : []));
-    useEffect(() => { fetchUsers(); }, [token]);
-
-    const updateBalance = (uid: number) => {
-        const val = prompt('Enter new balance:');
-        if (val) {
-            fetch(`${API_URL}/admin/users/${uid}/balance`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(parseFloat(val))
-            }).then(() => fetchUsers());
-        }
-    };
-
-    return (
-        <div className="bg-neutral-900 rounded-2xl border border-white/5 overflow-hidden">
-            <table className="w-full text-left text-xs">
-                <thead className="bg-white/5 text-neutral-500 uppercase font-bold"><tr className="border-b border-white/5"><th className="p-4">User</th><th className="p-4">Balance</th><th className="p-4">Action</th></tr></thead>
-                <tbody className="divide-y divide-white/5">
-                    {users.map(u => (
-                        <tr key={u.telegram_id}>
-                            <td className="p-4"><div>{u.full_name}</div><div className="text-[10px] text-neutral-500">@{u.username}</div></td>
-                            <td className="p-4 font-mono text-blue-400">{u.balance} Ⓜ️</td>
-                            <td className="p-4"><button onClick={() => updateBalance(u.telegram_id)} className="text-blue-500 font-bold hover:underline">Edit Ⓜ️</button></td>
-                        </tr>))}
-                </tbody>
-            </table>
-        </div>
-    );
-};
-
-// ... Rest of AdminDashboard and App remains similar
 const AdminDashboard = ({ token }: { token: string }) => {
+    const { t } = useTranslation();
     const [view, setView] = useState('stats');
+    const [stats, setStats] = useState<any>({ active_subscriptions: 0, total_revenue: 0, new_users_today: 0, monthly_revenue: 0 });
+
+    useEffect(() => {
+        if (view === 'stats') {
+            fetch(`${API_URL}/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` }})
+                .then(res => res.json()).then(data => setStats(data));
+        }
+    }, [view, token]);
+
     if (!token) return <Navigate to="/login" />;
+
     return (
         <div className="p-4 max-w-6xl mx-auto">
-            <div className="flex justify-between mb-8">
-                <h1 className="text-xl font-black uppercase text-blue-500">Admin</h1>
-                <div className="flex bg-neutral-900 p-1 rounded-xl">
-                    {['stats', 'users', 'tariffs'].map(v => <button key={v} onClick={() => setView(v)} className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase transition ${view === v ? 'bg-blue-600 text-white' : 'text-neutral-500'}`}>{v}</button>)}
+            <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                <h1 className="text-2xl font-black uppercase text-blue-500 tracking-tighter">Membersly <span className="text-white/20">Admin</span></h1>
+                <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
+                    {['stats', 'bots', 'channels', 'tariffs', 'broadcast', 'users'].map((v) => (
+                        <button key={v} onClick={() => setView(v)} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-neutral-500 hover:text-neutral-300'}`}>{v}</button>
+                    ))}
                 </div>
             </div>
-            {view === 'users' && <ManageUsers token={token} />}
-            {/* stats & tariffs views... */}
+
+            {view === 'stats' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard label="Active Subs" value={stats.active_subscriptions} />
+                    <StatCard label="Total Rev" value={`${stats.total_revenue} ₽`} color="text-green-500" />
+                    <StatCard label="Last 30d" value={`${stats.monthly_revenue} ₽`} color="text-blue-400" />
+                    <StatCard label="New Today" value={stats.new_users_today} />
+                </div>
+            )}
+            {/* Other views logic... */}
         </div>
     );
 };
 
+const StatCard = ({ label, value, color = "text-white" }: any) => (
+    <div className="p-6 bg-neutral-900 rounded-3xl border border-white/5 shadow-xl">
+        <div className="text-[10px] font-black uppercase text-neutral-500 mb-2 tracking-widest">{label}</div>
+        <div className={`text-4xl font-black tracking-tighter ${color}`}>{value}</div>
+    </div>
+);
+
+// App & Auth remains same...
 function App() {
+    const { i18n } = useTranslation();
     const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
     return (
         <Router>
-            <div className="min-h-screen bg-black text-neutral-100">
-                <nav className="p-4 border-b border-white/5 flex gap-4 text-[10px] uppercase font-bold text-neutral-600"><Link to="/">Client</Link><Link to="/admin">Admin</Link></nav>
-                <div className="py-8">
-                    <Routes>
-                        <Route path="/" element={<ClientZone />} />
-                        <Route path="/admin" element={<AdminDashboard token={token} />} />
-                        <Route path="/login" element={<div>Login Page</div>} />
-                    </Routes>
-                </div>
+            <div className="min-h-screen bg-black text-neutral-100 font-sans selection:bg-blue-500/30">
+                <nav className="p-4 border-b border-white/5 flex justify-between items-center px-8">
+                    <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-neutral-600">
+                        <Link to="/" className="hover:text-white transition">User</Link>
+                        <Link to="/admin" className="hover:text-white transition">Admin</Link>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex gap-2 text-[10px] font-bold">
+                            <button onClick={() => i18n.changeLanguage('ru')} className={i18n.language === 'ru' ? 'text-blue-500' : 'text-neutral-600'}>RU</button>
+                            <button onClick={() => i18n.changeLanguage('en')} className={i18n.language === 'en' ? 'text-blue-500' : 'text-neutral-600'}>EN</button>
+                        </div>
+                        {token && <button onClick={() => { setToken(''); localStorage.removeItem('admin_token'); }} className="text-[10px] font-black uppercase text-red-500/50 hover:text-red-500 transition">Logout</button>}
+                    </div>
+                </nav>
+                <div className="py-8"><Routes><Route path="/" element={<ClientZone />} /><Route path="/admin" element={<AdminDashboard token={token} />} /><Route path="/login" element={<div>Login Logic</div>} /></Routes></div>
             </div>
         </Router>
     );

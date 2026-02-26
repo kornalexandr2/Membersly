@@ -15,17 +15,27 @@ router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_cu
 @router.get("/stats")
 async def get_stats(db: AsyncSession = Depends(get_db)):
     from sqlalchemy import func
-    from app.models.models import Subscription, Payment
+    from app.models.models import Subscription, Payment, User
     
     # Считаем активные подписки
     active_subs = await db.execute(select(func.count(Subscription.id)).where(Subscription.is_active == True))
     
-    # Считаем общую выручку (успешные платежи)
-    revenue = await db.execute(select(func.sum(Payment.amount)).where(Payment.status == "succeeded"))
+    # Считаем общую выручку
+    total_rev = await db.execute(select(func.sum(Payment.amount)).where(Payment.status == "succeeded"))
+    
+    # Новые пользователи за сегодня
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    new_users = await db.execute(select(func.count(User.telegram_id)).where(User.created_at >= today))
+    
+    # Выручка за последние 30 дней
+    month_ago = datetime.now() - timedelta(days=30)
+    monthly_rev = await db.execute(select(func.sum(Payment.amount)).where(Payment.status == "succeeded", Payment.created_at >= month_ago))
     
     return {
         "active_subscriptions": active_subs.scalar() or 0,
-        "total_revenue": float(revenue.scalar() or 0)
+        "total_revenue": float(total_rev.scalar() or 0),
+        "new_users_today": new_users.scalar() or 0,
+        "monthly_revenue": float(monthly_rev.scalar() or 0)
     }
 
 class BotCreate(BaseModel):

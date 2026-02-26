@@ -3,16 +3,15 @@ from aiogram.filters import CommandStart
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from app.models.models import User, Subscription
+from app.models.models import User, Subscription, Tariff, Payment
 from app.core.db import AsyncSessionLocal
 
 router = Router()
 
 @router.message(CommandStart())
 async def start_handler(message: types.Message, i18n: callable):
-    # Register user
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(User).where(User.telegram_id == message.from_user.id))
         user = result.scalar_one_or_none()
@@ -46,7 +45,7 @@ async def start_handler(message: types.Message, i18n: callable):
             
             if start_coupon:
                 await message.answer(i18n("coupon_activated", coupon=start_coupon))
-        
+
     builder = InlineKeyboardBuilder()
     builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/"))
     builder.button(text=i18n("btn_balance"), callback_data="view_balance")
@@ -66,13 +65,26 @@ async def view_balance_handler(callback: types.CallbackQuery, i18n: callable):
     await callback.message.answer(i18n("balance_info", id=callback.from_user.id, balance=balance))
     await callback.answer()
 
-    builder = InlineKeyboardBuilder()
-    builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/"))
-    builder.button(text=i18n("btn_my_subscriptions"), callback_data="my_subs")
-    builder.button(text=i18n("btn_support"), url="https://t.me/support")
-    builder.adjust(1)
+@router.callback_query(lambda c: c.data == "my_subs")
+async def my_subscriptions_handler(callback: types.CallbackQuery, i18n: callable):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Subscription, Tariff).join(Tariff).where(
+                Subscription.user_id == callback.from_user.id,
+                Subscription.is_active == True
+            )
+        )
+        subs_data = result.all()
 
-    await message.answer(i18n("welcome_message", name=message.from_user.first_name), reply_markup=builder.as_markup())
+    if not subs_data:
+        await callback.message.answer(i18n("no_active_subscriptions"))
+    else:
+        text = i18n("active_subscriptions_list") + "\n\n"
+        for sub, tariff in subs_data:
+            end_date = sub.end_date.strftime("%d.%m.%Y")
+            text += f"✅ {tariff.title} — до {end_date}\n"
+        await callback.message.answer(text)
+    await callback.answer()
 
 @router.pre_checkout_query()
 async def pre_checkout_query_handler(pre_checkout_query: types.PreCheckoutQuery):
@@ -80,9 +92,7 @@ async def pre_checkout_query_handler(pre_checkout_query: types.PreCheckoutQuery)
 
 @router.message(types.Message.successful_payment)
 async def successful_payment_handler(message: types.Message):
-    # Here we activate the subscription after Stars payment
     payload = message.successful_payment.invoice_payload
-    # payload contains tariff_id
     tariff_id = int(payload)
     
     async with AsyncSessionLocal() as session:
@@ -90,12 +100,7 @@ async def successful_payment_handler(message: types.Message):
         tariff = result.scalar_one()
         
         end_date = datetime.now() + timedelta(days=tariff.duration_days)
-        new_sub = Subscription(
-            user_id=message.from_user.id,
-            tariff_id=tariff_id,
-            end_date=end_date,
-            is_active=True
-        )
+        new_sub = Subscription(user_id=message.from_user.id, tariff_id=tariff_id, end_date=end_date, is_active=True)
         session.add(new_sub)
         
         new_payment = Payment(
@@ -110,8 +115,10 @@ async def successful_payment_handler(message: types.Message):
         await session.commit()
 
     await message.answer("Оплата в Stars прошла успешно! Доступ открыт.")
+
+@router.chat_join_request()
+async def join_request_handler(chat_join: types.ChatJoinRequest):
     async with AsyncSessionLocal() as session:
-        # Проверяем, есть ли у пользователя активная подписка
         result = await session.execute(
             select(Subscription).where(
                 Subscription.user_id == chat_join.from_user.id,
@@ -123,13 +130,7 @@ async def successful_payment_handler(message: types.Message):
 
         if subscription:
             await chat_join.approve()
-            await chat_join.bot.send_message(
-                chat_join.from_user.id, 
-                "Ваша заявка на вступление одобрена! Добро пожаловать."
-            )
+            await chat_join.bot.send_message(chat_join.from_user.id, "Ваша заявка одобрена! Добро пожаловать.")
         else:
             await chat_join.decline()
-            await chat_join.bot.send_message(
-                chat_join.from_user.id, 
-                "Для вступления в этот канал необходимо оформить подписку в приложении."
-            )
+            await chat_join.bot.send_message(chat_join.from_user.id, "Для вступления необходимо оформить подписку.")
