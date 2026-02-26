@@ -223,16 +223,35 @@ async def delete_coupon(coupon_id: int, db: AsyncSession = Depends(get_db)):
     return {"status": "deleted"}
 
 @router.post("/broadcast")
-async def admin_broadcast(text: str = Body(...), db: AsyncSession = Depends(get_db)):
+async def admin_broadcast(text: str = Body(...), segment: str = Body("all"), db: AsyncSession = Depends(get_db)):
+    from app.models.models import BotConfig, User, Subscription
+    from sqlalchemy import and_
+    
+    # 1. Фильтруем пользователей по сегменту
+    if segment == "active":
+        # Пользователи с хотя бы одной активной подпиской
+        query = select(User).join(Subscription).where(Subscription.is_active == True).distinct()
+    elif segment == "expired":
+        # Пользователи, у которых были подписки, но сейчас нет ни одной активной
+        query = select(User).join(Subscription).where(Subscription.is_active == False).distinct()
+    else:
+        query = select(User)
+        
+    users_res = await db.execute(query)
+    users = users_res.scalars().all()
+    
+    # 2. Получаем бота для отправки
     bots_res = await db.execute(select(BotConfig).where(BotConfig.is_active == True))
     bots = bots_res.scalars().all()
-    users_res = await db.execute(select(User))
-    users = users_res.scalars().all()
+    
     count = 0
-    if bots:
+    if bots and users:
         bot = Bot(token=bots[0].token)
         for u in users:
-            try: await bot.send_message(u.telegram_id, text); count += 1
+            try:
+                await bot.send_message(u.telegram_id, text)
+                count += 1
             except Exception: continue
         await bot.session.close()
+        
     return {"status": "ok", "sent_to": count}

@@ -40,7 +40,13 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
     useEffect(() => { fetchData(); }, [view, token, apiUrl]);
 
     const handleAction = async (method: string, endpoint: string, body?: any) => {
-        const res = await fetch(`${apiUrl}/admin/${endpoint}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+        const fetchOptions: any = { method, headers };
+        if (body) {
+            // Если body уже строка (как было для broadcast), оставляем как есть, 
+            // но лучше всегда передавать объект для консистентности.
+            fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
+        }
+        const res = await fetch(`${apiUrl}/admin/${endpoint}`, fetchOptions);
         if (res.ok) fetchData();
     };
 
