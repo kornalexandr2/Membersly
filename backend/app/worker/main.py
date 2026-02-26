@@ -13,17 +13,66 @@ async def shutdown(ctx):
     await ctx['bot'].session.close()
     await ctx['session'].close()
 
-async def notify_users(ctx):
-    # Logic to notify users 3 days and 24 hours before expiration
-    pass
+from datetime import datetime, timedelta
+from sqlalchemy import select, update
+from app.models.models import Subscription, User, Tariff, Channel
 
-async def autorenew_subscriptions(ctx):
-    # Logic to charge recurrent payments via Yookassa
-    pass
+async def notify_users(ctx):
+    session = ctx['session']
+    bot = ctx['bot']
+    
+    # Находим подписки, истекающие через 24 часа
+    tomorrow = datetime.now() + timedelta(days=1)
+    result = await session.execute(
+        select(Subscription).where(
+            Subscription.is_active == True,
+            Subscription.end_date <= tomorrow,
+            Subscription.end_date > datetime.now()
+        )
+    )
+    subs = result.scalars().all()
+    
+    for sub in subs:
+        try:
+            await bot.send_message(sub.user_id, "Ваша подписка истекает через 24 часа. Пожалуйста, продлите её.")
+        except Exception:
+            pass
 
 async def handle_expired_subscriptions(ctx):
-    # Kick/Ban logic from channels
-    pass
+    session = ctx['session']
+    bot = ctx['bot']
+    
+    # Находим истекшие подписки
+    result = await session.execute(
+        select(Subscription).where(
+            Subscription.is_active == True,
+            Subscription.end_date <= datetime.now()
+        )
+    )
+    expired_subs = result.scalars().all()
+    
+    for sub in expired_subs:
+        # 1. Попытка автопродления (если включено) - здесь вызывалась бы функция оплаты
+        if sub.auto_renew and sub.payment_method_id:
+            # Логика списания через ЮKassa по токену
+            pass 
+        
+        # 2. Если продление не удалось или выключено — отзываем доступ
+        sub.is_active = False
+        await session.commit()
+        
+        # Получаем каналы, связанные с тарифом
+        tariff_result = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
+        tariff = tariff_result.scalar_one_or_none()
+        
+        if tariff:
+            for channel in tariff.channels:
+                try:
+                    await bot.ban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id)
+                    await bot.unban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id) # unban чтобы мог зайти снова после оплаты
+                    await bot.send_message(sub.user_id, f"Срок вашей подписки на {channel.title} истек. Доступ ограничен.")
+                except Exception as e:
+                    print(f"Error kicking user {sub.user_id}: {e}")
 
 async def daily_watchdog(ctx):
     await notify_users(ctx)

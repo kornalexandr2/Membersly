@@ -3,8 +3,9 @@ from aiogram.filters import CommandStart
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from datetime import datetime
 
-from app.models.models import User
+from app.models.models import User, Subscription
 from app.core.db import AsyncSessionLocal
 
 router = Router()
@@ -46,8 +47,26 @@ async def start_handler(message: types.Message, i18n: callable):
 
 @router.chat_join_request()
 async def join_request_handler(chat_join: types.ChatJoinRequest):
-    # Here you would check if the user has an active subscription for the channel
-    # if has_subscription: await chat_join.approve() else: await chat_join.decline()
-    # Placeholder: decline by default to prevent unauthorized access
-    # await chat_join.decline()
-    pass
+    async with AsyncSessionLocal() as session:
+        # Проверяем, есть ли у пользователя активная подписка
+        result = await session.execute(
+            select(Subscription).where(
+                Subscription.user_id == chat_join.from_user.id,
+                Subscription.is_active == True,
+                Subscription.end_date > datetime.now()
+            )
+        )
+        subscription = result.scalar_one_or_none()
+
+        if subscription:
+            await chat_join.approve()
+            await chat_join.bot.send_message(
+                chat_join.from_user.id, 
+                "Ваша заявка на вступление одобрена! Добро пожаловать."
+            )
+        else:
+            await chat_join.decline()
+            await chat_join.bot.send_message(
+                chat_join.from_user.id, 
+                "Для вступления в этот канал необходимо оформить подписку в приложении."
+            )
