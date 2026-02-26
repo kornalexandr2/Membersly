@@ -61,6 +61,7 @@ class TariffCreate(BaseModel):
     duration_days: int
     is_recurring: bool = False
     trial_days: int = 0
+    access_level: str = "full_access"
     channel_ids: List[int] = []
 
 @router.get("/tariffs")
@@ -77,7 +78,8 @@ async def add_tariff(tariff_data: TariffCreate, db: AsyncSession = Depends(get_d
         currency=tariff_data.currency,
         duration_days=tariff_data.duration_days,
         is_recurring=tariff_data.is_recurring,
-        trial_days=tariff_data.trial_days
+        trial_days=tariff_data.trial_days,
+        access_level=tariff_data.access_level
     )
     
     if tariff_data.channel_ids:
