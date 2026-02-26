@@ -84,26 +84,21 @@ async def handle_expired_subscriptions(ctx):
     session = ctx['session']
     bot = ctx['bot']
     
-    # Находим истекшие подписки
+    # Находим подписки, которые истекли более 24 часов назад
+    grace_limit = datetime.now() - timedelta(hours=24)
     result = await session.execute(
         select(Subscription).where(
             Subscription.is_active == True,
-            Subscription.end_date <= datetime.now()
+            Subscription.end_date <= grace_limit
         )
     )
     expired_subs = result.scalars().all()
     
     for sub in expired_subs:
-        # 1. Попытка автопродления (если включено) - здесь вызывалась бы функция оплаты
-        if sub.auto_renew and sub.payment_method_id:
-            # Логика списания через ЮKassa по токену
-            pass 
-        
-        # 2. Если продление не удалось или выключено — отзываем доступ
+        # Отзываем доступ только после окончания льготного периода
         sub.is_active = False
         await session.commit()
         
-        # Получаем каналы, связанные с тарифом
         tariff_result = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
         tariff = tariff_result.scalar_one_or_none()
         
@@ -111,22 +106,30 @@ async def handle_expired_subscriptions(ctx):
             for channel in tariff.channels:
                 try:
                     if channel.type == "channel":
-                        # Для каналов - полный бан (кик)
                         await bot.ban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id)
                         await bot.unban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id)
                     else:
-                        # Для групп - ограничение прав, если уровень доступа упал
-                        if tariff.access_level == "full_access":
-                            from aiogram.types import ChatPermissions
-                            await bot.restrict_chat_member(
-                                chat_id=channel.telegram_chat_id,
-                                user_id=sub.user_id,
-                                permissions=ChatPermissions(can_send_messages=False)
-                            )
-                    
-                    await bot.send_message(sub.user_id, f"Срок вашей подписки на {channel.title} истек. Доступ ограничен.")
+                        from aiogram.types import ChatPermissions
+                        await bot.restrict_chat_member(
+                            chat_id=channel.telegram_chat_id,
+                            user_id=sub.user_id,
+                            permissions=ChatPermissions(can_send_messages=False)
+                        )
                 except Exception as e:
-                    print(f"Error managing access for user {sub.user_id} in {channel.title}: {e}")
+                    print(f"Error kicking user {sub.user_id}: {e}")
+
+    # Уведомление о начале Grace Period (те, кто только что истек)
+    just_expired = await session.execute(
+        select(Subscription).where(
+            Subscription.is_active == True,
+            Subscription.end_date <= datetime.now(),
+            Subscription.end_date > grace_limit
+        )
+    )
+    for sub in just_expired.scalars().all():
+        try:
+            await bot.send_message(sub.user_id, "⚠️ Ваша подписка истекла. У вас есть 24 часа (Grace Period) на оплату, прежде чем доступ будет ограничен.")
+        except Exception: pass
 
 async def daily_watchdog(ctx):
     await notify_users(ctx)

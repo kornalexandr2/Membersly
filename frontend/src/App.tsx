@@ -43,6 +43,7 @@ const ClientZone = () => {
   const { t } = useTranslation();
   const [tariffs, setTariffs] = useState<any[]>([]);
   const [coupon, setCoupon] = useState('');
+  const [userId] = useState(12345); // Placeholder for Telegram ID
 
   useEffect(() => {
     fetch(`${API_URL}/tariffs`).then(res => res.json()).then(data => setTariffs(Array.isArray(data) ? data : []));
@@ -52,13 +53,21 @@ const ClientZone = () => {
     fetch(`${API_URL}/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tariff_id: tariffId, user_id: 12345, coupon_code: coupon })
+        body: JSON.stringify({ tariff_id: tariffId, user_id: userId, coupon_code: coupon })
     }).then(res => res.json()).then(data => { if(data.payment_url) window.location.href = data.payment_url; });
   };
+
+  const refLink = `https://t.me/your_bot?start=ref_${userId}`;
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-center">{t('welcome')}</h1>
+      
+      <div className="mb-6 p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20 text-center">
+          <div className="text-[10px] font-bold uppercase text-blue-400 mb-1">Приглашайте друзей и получайте 5%</div>
+          <div className="text-xs font-mono break-all text-neutral-300">{refLink}</div>
+      </div>
+
       <div className="mb-6"><input className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none" placeholder={t('promo')} value={coupon} onChange={(e) => setCoupon(e.target.value)} /></div>
       <div className="bg-neutral-900 p-6 rounded-2xl shadow-xl border border-white/5">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><span className="w-2 h-6 bg-blue-500 rounded-full"></span>{t('tariffs')}</h2>
