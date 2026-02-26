@@ -118,6 +118,18 @@ async def list_users(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User))
     return result.scalars().all()
 
+@router.get("/payments")
+async def list_payments(db: AsyncSession = Depends(get_db)):
+    from app.models.models import Payment
+    result = await db.execute(select(Payment).order_by(Payment.created_at.desc()).limit(100))
+    return result.scalars().all()
+
+@router.get("/subscriptions")
+async def list_subscriptions(db: AsyncSession = Depends(get_db)):
+    from app.models.models import Subscription
+    result = await db.execute(select(Subscription).order_by(Subscription.end_date.desc()).limit(100))
+    return result.scalars().all()
+
 @router.get("/channels")
 async def list_channels(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Channel))
