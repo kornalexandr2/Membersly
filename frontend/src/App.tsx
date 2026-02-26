@@ -104,7 +104,7 @@ const ManageUsers = ({ token }: { token: string }) => {
                     {users.map(u => (
                         <tr key={u.telegram_id} className="hover:bg-white/5 transition">
                             <td className="p-4"><div className="font-bold">{u.full_name}</div><div className="text-[10px] text-neutral-500">@{u.username}</div></td>
-                            <td className="p-4 font-mono">{u.balance} ₽</td>
+                            <td className="p-4 font-mono text-blue-400">{u.balance} Ⓜ️</td>
                             <td className="p-4 text-[10px] text-neutral-500">{new Date(u.created_at).toLocaleDateString()}</td>
                         </tr>))}
                 </tbody>

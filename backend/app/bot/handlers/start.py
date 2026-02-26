@@ -48,12 +48,23 @@ async def start_handler(message: types.Message, i18n: callable):
                 await message.answer(i18n("coupon_activated", coupon=start_coupon))
         
     builder = InlineKeyboardBuilder()
-    builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/")) # Should be real URL
+    builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/"))
+    builder.button(text=i18n("btn_balance"), callback_data="view_balance")
     builder.button(text=i18n("btn_my_subscriptions"), callback_data="my_subs")
     builder.button(text=i18n("btn_support"), url="https://t.me/support")
     builder.adjust(1)
 
     await message.answer(i18n("welcome_message", name=message.from_user.first_name), reply_markup=builder.as_markup())
+
+@router.callback_query(lambda c: c.data == "view_balance")
+async def view_balance_handler(callback: types.CallbackQuery, i18n: callable):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User).where(User.telegram_id == callback.from_user.id))
+        user = result.scalar_one_or_none()
+        balance = user.balance if user else 0
+        
+    await callback.message.answer(i18n("balance_info", id=callback.from_user.id, balance=balance))
+    await callback.answer()
 
     builder = InlineKeyboardBuilder()
     builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/"))
