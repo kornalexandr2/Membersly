@@ -118,6 +118,16 @@ async def list_users(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User))
     return result.scalars().all()
 
+@router.post("/users/{user_id}/balance")
+async def update_user_balance(user_id: int, amount: float = Body(...), db: AsyncSession = Depends(get_db)):
+    from decimal import Decimal
+    result = await db.execute(select(User).where(User.telegram_id == user_id))
+    user = result.scalar_one_or_none()
+    if user:
+        user.balance = Decimal(str(amount))
+        await db.commit()
+    return user
+
 @router.get("/payments")
 async def list_payments(db: AsyncSession = Depends(get_db)):
     from app.models.models import Payment

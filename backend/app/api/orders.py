@@ -20,7 +20,19 @@ async def create_order(tariff_id: int = Body(...), user_id: int = Body(...), cou
     user_result = await db.execute(select(User).where(User.telegram_id == user_id))
     user = user_result.scalar_one_or_none()
 
-    # 2. Apply Coupon
+    # 2. Check for Trial
+    existing_sub = await db.execute(select(Subscription).where(Subscription.user_id == user_id, Subscription.tariff_id == tariff_id))
+    if tariff.trial_days > 0 and not existing_sub.scalar_one_or_none():
+        new_sub = Subscription(
+            user_id=user_id, tariff_id=tariff_id,
+            end_date=datetime.now() + timedelta(days=tariff.trial_days),
+            is_active=True, auto_renew=False
+        )
+        db.add(new_sub)
+        await db.commit()
+        return {"status": "succeeded", "message": f"Trial activated for {tariff.trial_days} days"}
+
+    # 3. Apply Coupon
     final_price = float(tariff.price)
     # ... (coupon logic remains same)
     
