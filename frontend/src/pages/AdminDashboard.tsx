@@ -6,7 +6,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
     const [view, setView] = useState('stats');
     const [stats, setStats] = useState<any>({ active_subscriptions: 0, total_revenue: 0, new_users_today: 0, monthly_revenue: 0 });
     const [dataList, setDataList] = useState<any[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [channels, setChannels] = useState<any[]>([]);
     const [form, setForm] = useState<any>({ access_level: 'full_access', is_recurring: false, selectedChannels: [] });
 
     const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -16,6 +16,13 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
         if (view === 'stats') {
             const res = await fetch(`${apiUrl}/admin/stats`, { headers });
             setStats(await res.json());
+        } else if (view === 'tariffs') {
+            const [tRes, cRes] = await Promise.all([
+                fetch(`${apiUrl}/admin/tariffs`, { headers }),
+                fetch(`${apiUrl}/admin/channels`, { headers })
+            ]);
+            setDataList(await tRes.json());
+            setChannels(await cRes.json());
         } else {
             const res = await fetch(`${apiUrl}/admin/${view}`, { headers });
             const data = await res.json();
@@ -55,7 +62,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
             {view === 'tariffs' && (
                 <div className="space-y-8">
                     <form className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 space-y-6 shadow-2xl">
-                        <h3 className="text-lg font-bold text-blue-400 uppercase tracking-widest italic">New Protocol Creation</h3>
+                        <h3 className="text-lg font-bold text-blue-400 uppercase tracking-widest italic text-center">New Protocol Creation</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <input placeholder="PLAN NAME" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" onChange={e => setForm({...form, title: e.target.value})} />
                             <input placeholder="PRICE (RUB)" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" onChange={e => setForm({...form, price: e.target.value})} />
@@ -77,22 +84,26 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                             </div>
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-neutral-500 uppercase mb-3 ml-2 tracking-[0.2em]">Linked Resources</p>
+                            <p className="text-[10px] font-black text-neutral-500 uppercase mb-3 ml-2 tracking-[0.2em]">Included Resources</p>
                             <div className="flex flex-wrap gap-2">
-                                {/* Note: Channels need to be fetched, assuming they are in dataList when view changes or fetched separately */}
-                                <p className="text-[9px] text-neutral-600 italic">Select channels from 'Channels' tab first to link here.</p>
+                                {channels.map(c => (
+                                    <button key={c.id} type="button" onClick={() => toggleChannel(c.id)} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase border transition-all ${form.selectedChannels.includes(c.id) ? 'bg-blue-600 border-blue-500 text-white' : 'bg-black border-white/5 text-neutral-600'}`}>
+                                        {c.title}
+                                    </button>
+                                ))}
+                                {channels.length === 0 && <p className="text-[9px] text-neutral-700 italic">No channels linked. Add them in the 'Channels' tab.</p>}
                             </div>
                         </div>
-                        <button onClick={(e) => {e.preventDefault(); handleAction('POST', 'tariffs', {title: form.title, price: parseFloat(form.price), currency: 'RUB', duration_days: 30, trial_days: parseInt(form.trial || 0), access_level: form.access_level, is_recurring: form.is_recurring, channel_ids: []})}} className="w-full bg-blue-600 py-5 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-2xl shadow-blue-600/20">Establish Protocol</button>
+                        <button onClick={(e) => {e.preventDefault(); handleAction('POST', 'tariffs', {title: form.title, price: parseFloat(form.price), currency: 'RUB', duration_days: 30, trial_days: parseInt(form.trial || 0), access_level: form.access_level, is_recurring: form.is_recurring, channel_ids: form.selectedChannels})}} className="w-full bg-blue-600 py-5 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-2xl shadow-blue-600/20">Establish Protocol</button>
                     </form>
                     <div className="grid gap-4">
                         {dataList.map(t => (
-                            <div key={t.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center hover:bg-white/[0.01] transition-all group">
-                                <div className="space-y-1">
+                            <div key={t.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center group">
+                                <div>
                                     <div className="font-black text-xl uppercase tracking-tighter group-hover:text-blue-400 transition">{t.title}</div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 items-center mt-1">
                                         <span className="text-[9px] bg-white/5 px-2 py-0.5 rounded-full text-neutral-500 font-bold uppercase">{t.access_level}</span>
-                                        {t.is_recurring && <span className="text-[9px] bg-green-500/10 px-2 py-0.5 rounded-full text-green-500 font-bold uppercase">Recurring</span>}
+                                        {t.channels?.map((c: any) => <span key={c.id} className="text-[8px] text-blue-500/60 font-black uppercase">#{c.title}</span>)}
                                     </div>
                                 </div>
                                 <button onClick={() => handleAction('DELETE', `tariffs/${t.id}`)} className="text-red-600 font-black text-[10px] uppercase hover:underline">Decommission</button>
@@ -102,13 +113,31 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                 </div>
             )}
 
-            {/* Rest of the views (stats, users, coupons, broadcast, bots, channels) follow similar modular handleAction pattern */}
             {view === 'stats' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-bottom-4 duration-500">
                     <StatCard label="Active Base" value={stats.active_subscriptions} />
                     <StatCard label="Total Cash" value={`${stats.total_revenue} ₽`} color="text-green-500" />
                     <StatCard label="30D Velocity" value={`${stats.monthly_revenue} ₽`} color="text-blue-400" />
                     <StatCard label="New Pulse" value={stats.new_users_today} />
+                </div>
+            )}
+
+            {/* Other admin views (channels, broadcast, bots, users, coupons) logic using handleAction pattern... */}
+            {view === 'channels' && (
+                <div className="space-y-6">
+                    <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 flex gap-4">
+                        <input placeholder="CHAT ID" className="bg-black p-4 rounded-2xl flex-1 text-xs font-bold" onChange={e => setForm({...form, chat_id: e.target.value})} />
+                        <input placeholder="TITLE" className="bg-black p-4 rounded-2xl flex-1 text-xs font-bold" onChange={e => setForm({...form, title: e.target.value})} />
+                        <button onClick={() => handleAction('POST', `channels?chat_id=${form.chat_id}&title=${form.title}&type=channel`)} className="bg-blue-600 px-8 rounded-2xl font-black text-[10px] uppercase">Link</button>
+                    </div>
+                    <div className="grid gap-3">
+                        {dataList.map(c => (
+                            <div key={c.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center">
+                                <div><div className="font-black text-sm uppercase tracking-tighter">{c.title}</div><div className="text-[10px] text-neutral-500">ID: {c.telegram_chat_id}</div></div>
+                                <button onClick={() => handleAction('DELETE', `channels/${c.id}`)} className="text-red-600 font-black text-[10px] uppercase hover:underline">Unlink</button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
