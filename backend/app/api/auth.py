@@ -13,7 +13,6 @@ from app.core.config import settings
 router = APIRouter(prefix="/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "super-secret-key-change-me" # Should be in settings
 ALGORITHM = "HS256"
 
 class AdminLogin(BaseModel):
@@ -28,5 +27,5 @@ async def admin_login(data: AdminLogin, db: AsyncSession = Depends(get_db)):
     if not admin or not pwd_context.verify(data.password, admin.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = jwt.encode({"sub": admin.login, "exp": datetime.utcnow() + timedelta(days=1)}, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode({"sub": admin.login, "exp": datetime.utcnow() + timedelta(days=1)}, settings.secret_key, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}

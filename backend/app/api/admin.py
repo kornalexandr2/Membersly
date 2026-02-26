@@ -26,6 +26,40 @@ async def add_bot(bot_data: BotCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     return new_bot
 
+class TariffCreate(BaseModel):
+    title: str
+    price: float
+    currency: str
+    duration_days: int
+    is_recurring: bool = False
+
+@router.get("/tariffs")
+async def list_tariffs(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Tariff))
+    return result.scalars().all()
+
+@router.post("/tariffs")
+async def add_tariff(tariff_data: TariffCreate, db: AsyncSession = Depends(get_db)):
+    new_tariff = Tariff(
+        title=tariff_data.title,
+        price=tariff_data.price,
+        currency=tariff_data.currency,
+        duration_days=tariff_data.duration_days,
+        is_recurring=tariff_data.is_recurring
+    )
+    db.add(new_tariff)
+    await db.commit()
+    return new_tariff
+
+@router.delete("/tariffs/{tariff_id}")
+async def delete_tariff(tariff_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Tariff).where(Tariff.id == tariff_id))
+    tariff = result.scalar_one_or_none()
+    if tariff:
+        await db.delete(tariff)
+        await db.commit()
+    return {"status": "deleted"}
+
 @router.get("/channels")
 async def list_channels(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Channel))

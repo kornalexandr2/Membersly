@@ -41,6 +41,47 @@ const ClientZone = () => {
   );
 };
 
+const ManageTariffs = () => {
+    const [tariffs, setTariffs] = useState<any[]>([]);
+    const [form, setForm] = useState({ title: '', price: '', currency: 'RUB', duration: '30' });
+
+    const fetchTariffs = () => {
+        fetch(`${API_URL}/admin/tariffs`)
+            .then(res => res.json())
+            .then(data => setTariffs(data));
+    };
+
+    useEffect(() => { fetchTariffs(); }, []);
+
+    const addTariff = (e: React.FormEvent) => {
+        e.preventDefault();
+        fetch(`${API_URL}/admin/tariffs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: form.title, price: parseFloat(form.price), currency: form.currency, duration_days: parseInt(form.duration) })
+        }).then(() => { setForm({ title: '', price: '', currency: 'RUB', duration: '30' }); fetchTariffs(); });
+    };
+
+    return (
+        <div className="space-y-6">
+            <form onSubmit={addTariff} className="bg-neutral-900 p-6 rounded-xl border border-white/10 grid grid-cols-2 gap-4">
+                <input placeholder="Название тарифа" className="bg-black p-2 rounded" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+                <input placeholder="Цена" className="bg-black p-2 rounded" value={form.price} onChange={e => setForm({...form, price: e.target.value})} />
+                <input placeholder="Дней" className="bg-black p-2 rounded" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
+                <button className="bg-blue-600 rounded">Создать</button>
+            </form>
+            <div className="grid gap-2">
+                {tariffs.map(t => (
+                    <div key={t.id} className="p-4 bg-neutral-900 rounded border border-white/5 flex justify-between">
+                        <span>{t.title} - {t.price} {t.currency}</span>
+                        <button className="text-red-500 text-sm">Удалить</button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const ManageBots = () => {
     const [bots, setBots] = useState<any[]>([]);
     const [token, setToken] = useState('');
@@ -96,7 +137,7 @@ const ManageBots = () => {
 };
 
 const AdminDashboard = () => {
-    const [view, setView] = useState<'stats' | 'bots'>('stats');
+    const [view, setView] = useState<'stats' | 'bots' | 'tariffs'>('stats');
 
     return (
         <div className="p-4 max-w-4xl mx-auto">
@@ -105,10 +146,11 @@ const AdminDashboard = () => {
                 <div className="flex bg-neutral-900 p-1 rounded-lg border border-white/5">
                     <button onClick={() => setView('stats')} className={`px-4 py-1.5 rounded-md text-sm transition ${view === 'stats' ? 'bg-blue-600 text-white' : 'text-neutral-400'}`}>Stats</button>
                     <button onClick={() => setView('bots')} className={`px-4 py-1.5 rounded-md text-sm transition ${view === 'bots' ? 'bg-blue-600 text-white' : 'text-neutral-400'}`}>Bots</button>
+                    <button onClick={() => setView('tariffs')} className={`px-4 py-1.5 rounded-md text-sm transition ${view === 'tariffs' ? 'bg-blue-600 text-white' : 'text-neutral-400'}`}>Tariffs</button>
                 </div>
             </div>
 
-            {view === 'stats' ? (
+            {view === 'stats' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-6 bg-neutral-900 rounded-2xl border border-white/5">
                         <div className="text-neutral-500 text-sm mb-1 uppercase tracking-wider">Active Subs</div>
@@ -119,7 +161,9 @@ const AdminDashboard = () => {
                         <div className="text-4xl font-black text-green-400">45,200 ₽</div>
                     </div>
                 </div>
-            ) : <ManageBots />}
+            )}
+            {view === 'bots' && <ManageBots />}
+            {view === 'tariffs' && <ManageTariffs />}
         </div>
     );
 };

@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
     yookassa_shop_id: Optional[str] = "PLACEHOLDER_SHOP_ID"
     yookassa_secret_key: Optional[str] = "PLACEHOLDER_SECRET_KEY"
+    secret_key: str = "super-secret-key-change-me-in-production"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
