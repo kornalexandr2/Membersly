@@ -3,8 +3,31 @@ from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.db import AsyncSessionLocal
+from datetime import datetime, timedelta
+from sqlalchemy import select
+from app.models.models import Subscription, User, Tariff, Channel
+from app.core.payments import PaymentService
+from decimal import Decimal
 import asyncio
+import json
+import os
 
+# 1. Locales Engine
+LOCALES = {}
+locales_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "locales")
+for filename in os.listdir(locales_dir):
+    if filename.endswith('.json'):
+        lang = filename.split('.')[0]
+        with open(os.path.join(locales_dir, filename), 'r', encoding='utf-8') as f:
+            LOCALES[lang] = json.load(f)
+
+def _(lang: str, key: str, **kwargs) -> str:
+    text = LOCALES.get(lang, LOCALES.get('en', {})).get(key, key)
+    for k, v in kwargs.items():
+        text = text.replace(f"{{{k}}}", str(v))
+    return text
+
+# 2. Worker Lifecycle
 async def startup(ctx):
     ctx['bot'] = Bot(token=settings.bot_token)
     ctx['session'] = AsyncSessionLocal()
@@ -13,104 +36,53 @@ async def shutdown(ctx):
     await ctx['bot'].session.close()
     await ctx['session'].close()
 
-from datetime import datetime, timedelta
-from sqlalchemy import select, update
-from app.models.models import Subscription, User, Tariff, Channel
-
+# 3. Tasks
 async def notify_users(ctx):
     session = ctx['session']
     bot = ctx['bot']
     
-    # 1. Уведомление за 24 часа
+    # 24h Notifications
     tomorrow = datetime.now() + timedelta(days=1)
-    result_24 = await session.execute(
-        select(Subscription).where(
-            Subscription.is_active == True,
-            Subscription.end_date <= tomorrow,
-            Subscription.end_date > datetime.now()
-        )
-    )
-    for sub in result_24.scalars().all():
-        try: await bot.send_message(sub.user_id, "⚠️ Ваша подписка истекает через 24 часа.")
+    res_24 = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= tomorrow, Subscription.end_date > datetime.now()))
+    for sub, user in res_24.all():
+        try: await bot.send_message(sub.user_id, _(user.language_code, "notify_24h"))
         except Exception: pass
 
-    # 2. Уведомление за 3 дня (72 часа)
+    # 3d Notifications
     three_days = datetime.now() + timedelta(days=3)
-    result_72 = await session.execute(
-        select(Subscription).where(
-            Subscription.is_active == True,
-            Subscription.end_date <= three_days,
-            Subscription.end_date > three_days - timedelta(minutes=5) # Ограничиваем окно срабатывания
-        )
-    )
-    for sub in result_72.scalars().all():
-        try: await bot.send_message(sub.user_id, "ℹ️ Напоминание: ваша подписка истекает через 3 дня.")
+    res_72 = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= three_days, Subscription.end_date > three_days - timedelta(minutes=10)))
+    for sub, user in res_72.all():
+        try: await bot.send_message(sub.user_id, _(user.language_code, "notify_3d"))
         except Exception: pass
-
-from app.core.payments import PaymentService
-from decimal import Decimal
 
 async def autorenew_subscriptions(ctx):
     session = ctx['session']
-    
-    # Находим подписки с auto_renew, которые истекают через 1 час
     soon = datetime.now() + timedelta(hours=1)
-    result = await session.execute(
-        select(Subscription).where(
-            Subscription.is_active == True,
-            Subscription.auto_renew == True,
-            Subscription.payment_method_id.is_not(None),
-            Subscription.end_date <= soon,
-            Subscription.end_date > datetime.now()
-        )
-    )
-    subs_to_renew = result.scalars().all()
+    res = await session.execute(select(Subscription).where(Subscription.is_active == True, Subscription.auto_renew == True, Subscription.payment_method_id.is_not(None), Subscription.end_date <= soon, Subscription.end_date > datetime.now()))
     
-    for sub in subs_to_renew:
-        # Получаем тариф
+    for sub in res.scalars().all():
         t_res = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
         tariff = t_res.scalar_one_or_none()
-        
         if tariff:
             try:
-                # Пытаемся списать деньги по токену
-                yoo_payment = await PaymentService.charge_recurring(
-                    amount=float(tariff.price),
-                    currency=tariff.currency,
-                    payment_method_id=sub.payment_method_id,
-                    description=f"Auto-renew: {tariff.title}"
-                )
-                
-                if yoo_payment.status == "succeeded":
-                    # Продлеваем дату окончания
+                pay = await PaymentService.charge_recurring(amount=float(tariff.price), currency=tariff.currency, payment_method_id=sub.payment_method_id, description=f"Renew: {tariff.title}")
+                if pay and pay.status == "succeeded":
                     sub.end_date = sub.end_date + timedelta(days=tariff.duration_days)
                     await session.commit()
-                    print(f"Success auto-renew for user {sub.user_id}")
-            except Exception as e:
-                print(f"Failed to auto-renew sub {sub.id}: {e}")
+            except Exception: pass
 
 async def handle_expired_subscriptions(ctx):
     session = ctx['session']
     bot = ctx['bot']
-    
-    # Находим подписки, которые истекли более 24 часов назад
     grace_limit = datetime.now() - timedelta(hours=24)
-    result = await session.execute(
-        select(Subscription).where(
-            Subscription.is_active == True,
-            Subscription.end_date <= grace_limit
-        )
-    )
-    expired_subs = result.scalars().all()
     
-    for sub in expired_subs:
-        # Отзываем доступ только после окончания льготного периода
+    # Final Expire (After Grace)
+    res = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= grace_limit))
+    for sub, user in res.all():
         sub.is_active = False
         await session.commit()
-        
-        tariff_result = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
-        tariff = tariff_result.scalar_one_or_none()
-        
+        t_res = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
+        tariff = t_res.scalar_one_or_none()
         if tariff:
             for channel in tariff.channels:
                 try:
@@ -119,25 +91,14 @@ async def handle_expired_subscriptions(ctx):
                         await bot.unban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id)
                     else:
                         from aiogram.types import ChatPermissions
-                        await bot.restrict_chat_member(
-                            chat_id=channel.telegram_chat_id,
-                            user_id=sub.user_id,
-                            permissions=ChatPermissions(can_send_messages=False)
-                        )
-                except Exception as e:
-                    print(f"Error kicking user {sub.user_id}: {e}")
+                        await bot.restrict_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id, permissions=ChatPermissions(can_send_messages=False))
+                    await bot.send_message(sub.user_id, _(user.language_code, "access_revoked", title=channel.title))
+                except Exception: pass
 
-    # Уведомление о начале Grace Period (те, кто только что истек)
-    just_expired = await session.execute(
-        select(Subscription).where(
-            Subscription.is_active == True,
-            Subscription.end_date <= datetime.now(),
-            Subscription.end_date > grace_limit
-        )
-    )
-    for sub in just_expired.scalars().all():
-        try:
-            await bot.send_message(sub.user_id, "⚠️ Ваша подписка истекла. У вас есть 24 часа (Grace Period) на оплату, прежде чем доступ будет ограничен.")
+    # Notify Grace Period
+    just_expired = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= datetime.now(), Subscription.end_date > grace_limit))
+    for sub, user in just_expired.all():
+        try: await bot.send_message(sub.user_id, _(user.language_code, "grace_period_start"))
         except Exception: pass
 
 async def daily_watchdog(ctx):
@@ -150,7 +111,4 @@ class WorkerSettings:
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
-    cron_jobs = [
-        # Run every minute
-        {'function': daily_watchdog, 'minute': set(range(60))}
-    ]
+    cron_jobs = [{'function': daily_watchdog, 'minute': set(range(60))}]

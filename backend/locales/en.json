@@ -3,5 +3,9 @@
 I am the subscription management bot.",
     "btn_web_app": "🌐 Open App",
     "btn_my_subscriptions": "📦 My Subscriptions",
-    "btn_support": "🆘 Support"
+    "btn_support": "🆘 Support",
+    "notify_24h": "⚠️ Your subscription expires in 24 hours. Please renew to keep your access.",
+    "notify_3d": "ℹ️ Reminder: your subscription expires in 3 days.",
+    "grace_period_start": "⚠️ Your subscription has expired. You have a 24-hour Grace Period to pay before access is restricted.",
+    "access_revoked": "❌ Your subscription to {title} and the grace period have expired. Access is now restricted."
 }
