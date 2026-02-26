@@ -119,18 +119,28 @@ async def successful_payment_handler(message: types.Message):
 @router.chat_join_request()
 async def join_request_handler(chat_join: types.ChatJoinRequest):
     async with AsyncSessionLocal() as session:
+        # Ищем канал в нашей базе по его telegram_chat_id
+        c_res = await session.execute(select(Channel).where(Channel.telegram_chat_id == chat_join.chat.id))
+        channel = c_res.scalar_one_or_none()
+        
+        if not channel:
+            # Если канала нет в базе, по умолчанию отклоняем (или можно игнорировать)
+            return
+
+        # Проверяем, есть ли у пользователя активная подписка на тариф, включающий этот канал
         result = await session.execute(
-            select(Subscription).where(
+            select(Subscription).join(Tariff).join(Tariff.channels).where(
                 Subscription.user_id == chat_join.from_user.id,
                 Subscription.is_active == True,
-                Subscription.end_date > datetime.now()
+                Subscription.end_date > datetime.now(),
+                Channel.id == channel.id
             )
         )
         subscription = result.scalar_one_or_none()
 
         if subscription:
             await chat_join.approve()
-            await chat_join.bot.send_message(chat_join.from_user.id, "Ваша заявка одобрена! Добро пожаловать.")
+            await chat_join.bot.send_message(chat_join.from_user.id, f"✅ Доступ в {chat_join.chat.title} подтвержден!")
         else:
             await chat_join.decline()
-            await chat_join.bot.send_message(chat_join.from_user.id, "Для вступления необходимо оформить подписку.")
+            await chat_join.bot.send_message(chat_join.from_user.id, f"❌ Для доступа в {chat_join.chat.title} необходимо оформить подписку.")

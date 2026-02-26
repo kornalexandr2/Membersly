@@ -21,22 +21,31 @@ async def notify_users(ctx):
     session = ctx['session']
     bot = ctx['bot']
     
-    # Находим подписки, истекающие через 24 часа
+    # 1. Уведомление за 24 часа
     tomorrow = datetime.now() + timedelta(days=1)
-    result = await session.execute(
+    result_24 = await session.execute(
         select(Subscription).where(
             Subscription.is_active == True,
             Subscription.end_date <= tomorrow,
             Subscription.end_date > datetime.now()
         )
     )
-    subs = result.scalars().all()
-    
-    for sub in subs:
-        try:
-            await bot.send_message(sub.user_id, "Ваша подписка истекает через 24 часа. Пожалуйста, продлите её.")
-        except Exception:
-            pass
+    for sub in result_24.scalars().all():
+        try: await bot.send_message(sub.user_id, "⚠️ Ваша подписка истекает через 24 часа.")
+        except Exception: pass
+
+    # 2. Уведомление за 3 дня (72 часа)
+    three_days = datetime.now() + timedelta(days=3)
+    result_72 = await session.execute(
+        select(Subscription).where(
+            Subscription.is_active == True,
+            Subscription.end_date <= three_days,
+            Subscription.end_date > three_days - timedelta(minutes=5) # Ограничиваем окно срабатывания
+        )
+    )
+    for sub in result_72.scalars().all():
+        try: await bot.send_message(sub.user_id, "ℹ️ Напоминание: ваша подписка истекает через 3 дня.")
+        except Exception: pass
 
 from app.core.payments import PaymentService
 from decimal import Decimal
