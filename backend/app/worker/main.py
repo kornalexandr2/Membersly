@@ -110,11 +110,23 @@ async def handle_expired_subscriptions(ctx):
         if tariff:
             for channel in tariff.channels:
                 try:
-                    await bot.ban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id)
-                    await bot.unban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id) # unban чтобы мог зайти снова после оплаты
+                    if channel.type == "channel":
+                        # Для каналов - полный бан (кик)
+                        await bot.ban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id)
+                        await bot.unban_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id)
+                    else:
+                        # Для групп - ограничение прав, если уровень доступа упал
+                        if tariff.access_level == "full_access":
+                            from aiogram.types import ChatPermissions
+                            await bot.restrict_chat_member(
+                                chat_id=channel.telegram_chat_id,
+                                user_id=sub.user_id,
+                                permissions=ChatPermissions(can_send_messages=False)
+                            )
+                    
                     await bot.send_message(sub.user_id, f"Срок вашей подписки на {channel.title} истек. Доступ ограничен.")
                 except Exception as e:
-                    print(f"Error kicking user {sub.user_id}: {e}")
+                    print(f"Error managing access for user {sub.user_id} in {channel.title}: {e}")
 
 async def daily_watchdog(ctx):
     await notify_users(ctx)
