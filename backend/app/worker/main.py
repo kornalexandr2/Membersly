@@ -69,6 +69,15 @@ async def autorenew_subscriptions(ctx):
                 if pay and pay.status == "succeeded":
                     sub.end_date = sub.end_date + timedelta(days=tariff.duration_days)
                     await session.commit()
+                    # Notify success
+                    try: await bot.send_message(sub.user_id, _(user.language_code, "renew_success", title=tariff.title))
+                    except Exception: pass
+                else:
+                    # Notify failure
+                    u_res = await session.execute(select(User).where(User.telegram_id == sub.user_id))
+                    user = u_res.scalar_one()
+                    try: await bot.send_message(sub.user_id, _(user.language_code, "renew_failed"))
+                    except Exception: pass
             except Exception: pass
 
 async def handle_expired_subscriptions(ctx):

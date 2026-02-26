@@ -185,6 +185,16 @@ async def extend_user_subscription(user_id: int, tariff_id: int = Body(...), day
     await db.commit()
     return {"status": "ok", "new_end_date": sub.end_date}
 
+@router.delete("/subscriptions/{sub_id}")
+async def revoke_subscription(sub_id: int, db: AsyncSession = Depends(get_db)):
+    from app.models.models import Subscription
+    result = await db.execute(select(Subscription).where(Subscription.id == sub_id))
+    sub = result.scalar_one_or_none()
+    if sub:
+        sub.is_active = False
+        await db.commit()
+    return {"status": "revoked"}
+
 @router.get("/channels")
 async def list_channels(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Channel))
