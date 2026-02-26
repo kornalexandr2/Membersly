@@ -10,6 +10,22 @@ from app.models.models import BotConfig, Channel, User, Tariff
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+@router.get("/stats")
+async def get_stats(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import func
+    from app.models.models import Subscription, Payment
+    
+    # Считаем активные подписки
+    active_subs = await db.execute(select(func.count(Subscription.id)).where(Subscription.is_active == True))
+    
+    # Считаем общую выручку (успешные платежи)
+    revenue = await db.execute(select(func.sum(Payment.amount)).where(Payment.status == "succeeded"))
+    
+    return {
+        "active_subscriptions": active_subs.scalar() or 0,
+        "total_revenue": float(revenue.scalar() or 0)
+    }
+
 class BotCreate(BaseModel):
     token: str
     title: Optional[str] = None

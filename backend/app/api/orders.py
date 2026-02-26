@@ -53,7 +53,21 @@ async def create_order(tariff_id: int = Body(...), user_id: int = Body(...), cou
             metadata={"payment_id": new_payment.id, "tariff_id": tariff.id, "user_id": user_id}
         )
         new_payment.provider_payment_id = yoo_payment.id
-        await db.commit()
+                    from app.models.models import User
+                    from decimal import Decimal
+                    
+                    # Referral logic
+                    result_u = await db.execute(select(User).where(User.telegram_id == user_id))
+                    user = result_u.scalar_one_or_none()
+                    if user and user.referrer_id:
+                        ref_result = await db.execute(select(User).where(User.telegram_id == user.referrer_id))
+                        referrer = ref_result.scalar_one_or_none()
+                        if referrer:
+                            bonus = float(payment.amount) * 0.05
+                            referrer.balance += Decimal(str(bonus))
+                    
+                    await db.commit()
+        
         return {"status": "pending", "payment_url": yoo_payment.confirmation.confirmation_url}
     except Exception as e:
         await db.rollback()

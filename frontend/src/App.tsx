@@ -39,69 +39,42 @@ const ClientZone = () => {
   );
 };
 
-const ManageCoupons = () => {
+const ManageTariffs = () => {
     const { t } = useTranslation();
-    const [coupons, setCoupons] = useState<any[]>([]);
-    const [form, setForm] = useState({ code: '', value: '', type: 'percent', limit: '10' });
+    const [tariffs, setTariffs] = useState<any[]>([]);
+    const [form, setForm] = useState({ title: '', price: '', currency: 'RUB', duration: '30' });
 
-    const fetchCoupons = () => fetch(`${API_URL}/admin/coupons`).then(res => res.json()).then(data => setCoupons(data));
-    useEffect(() => fetchCoupons(), []);
+    const fetchTariffs = () => fetch(`${API_URL}/admin/tariffs`).then(res => res.json()).then(data => setTariffs(data));
+    useEffect(() => fetchTariffs(), []);
 
-    const addCoupon = (e: any) => {
+    const addTariff = (e: any) => {
         e.preventDefault();
-        fetch(`${API_URL}/admin/coupons`, {
+        fetch(`${API_URL}/admin/tariffs`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: form.code, value: parseFloat(form.value), discount_type: form.type, usage_limit: parseInt(form.limit) })
-        }).then(() => { setForm({ code: '', value: '', type: 'percent', limit: '10' }); fetchCoupons(); });
+            body: JSON.stringify({ title: form.title, price: parseFloat(form.price), currency: form.currency, duration_days: parseInt(form.duration) })
+        }).then(() => { setForm({ title: '', price: '', currency: 'RUB', duration: '30' }); fetchTariffs(); });
+    };
+
+    const deleteTariff = (id: number) => {
+        fetch(`${API_URL}/admin/tariffs/${id}`, { method: 'DELETE' }).then(() => fetchTariffs());
     };
 
     return (
         <div className="space-y-6">
-            <form onSubmit={addCoupon} className="bg-neutral-900 p-6 rounded-xl border border-white/10 grid grid-cols-2 gap-4">
-                <input placeholder="Code" className="bg-black p-2 rounded" value={form.code} onChange={e => setForm({...form, code: e.target.value})} />
-                <input placeholder="Value" className="bg-black p-2 rounded" value={form.value} onChange={e => setForm({...form, value: e.target.value})} />
-                <select className="bg-black p-2 rounded" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                    <option value="percent">% (Percent)</option>
-                    <option value="fixed">Fixed</option>
-                </select>
-                <button className="bg-blue-600 rounded py-2 font-bold">{t('admin.create_coupon')}</button>
+            <form onSubmit={addTariff} className="bg-neutral-900 p-6 rounded-xl border border-white/10 grid grid-cols-2 gap-4">
+                <input placeholder="Name" className="bg-black p-2 rounded border border-white/10" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+                <input placeholder="Price" className="bg-black p-2 rounded border border-white/10" value={form.price} onChange={e => setForm({...form, price: e.target.value})} />
+                <input placeholder="Duration (days)" className="bg-black p-2 rounded border border-white/10" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
+                <button className="bg-blue-600 rounded py-2 font-bold col-span-2">{t('admin.create_tariff')}</button>
             </form>
             <div className="grid gap-2">
-                {coupons.map(c => (
-                    <div key={c.id} className="p-4 bg-neutral-900 rounded border border-white/5 flex justify-between items-center">
-                        <span className="font-mono text-blue-400">{c.code}</span>
-                        <span>{c.value} {c.discount_type === 'percent' ? '%' : 'RUB'} ({c.used_count}/{c.usage_limit})</span>
-                        <button className="text-red-500 text-xs">{t('admin.delete')}</button>
+                {tariffs.map(t_item => (
+                    <div key={t_item.id} className="p-4 bg-neutral-900 rounded border border-white/5 flex justify-between items-center">
+                        <span>{t_item.title} - {t_item.price} {t_item.currency}</span>
+                        <button onClick={() => deleteTariff(t_item.id)} className="text-red-500 text-xs hover:underline">{t('admin.delete')}</button>
                     </div>))}
             </div>
-        </div>
-    );
-};
-
-const ManageUsers = () => {
-    const { t } = useTranslation();
-    const [users, setUsers] = useState<any[]>([]);
-    useEffect(() => { fetch(`${API_URL}/admin/users`).then(res => res.json()).then(data => setUsers(data)); }, []);
-
-    return (
-        <div className="bg-neutral-900 rounded-xl border border-white/5 overflow-hidden">
-            <table className="w-full text-left text-sm">
-                <thead className="bg-white/5 text-neutral-500 uppercase text-[10px] font-bold">
-                    <tr><th className="p-4">User</th><th className="p-4">Balance</th><th className="p-4">Status</th></tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                    {users.map(u => (
-                        <tr key={u.telegram_id}>
-                            <td className="p-4">
-                                <div className="font-bold">{u.full_name}</div>
-                                <div className="text-xs text-neutral-500">@{u.username}</div>
-                            </td>
-                            <td className="p-4">{u.balance}</td>
-                            <td className="p-4"><span className="bg-green-500/10 text-green-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Active</span></td>
-                        </tr>))}
-                </tbody>
-            </table>
         </div>
     );
 };
@@ -136,6 +109,13 @@ const ManageBots = () => {
 const AdminDashboard = () => {
     const { t } = useTranslation();
     const [view, setView] = useState<'stats' | 'bots' | 'tariffs' | 'broadcast' | 'coupons' | 'users'>('stats');
+    const [stats, setStats] = useState({ active_subscriptions: 0, total_revenue: 0 });
+
+    useEffect(() => {
+        if (view === 'stats') {
+            fetch(`${API_URL}/admin/stats`).then(res => res.json()).then(data => setStats(data));
+        }
+    }, [view]);
 
     return (
         <div className="p-4 max-w-6xl mx-auto">
@@ -147,12 +127,12 @@ const AdminDashboard = () => {
                     ))}
                 </div>
             </div>
-            {view === 'stats' && (<div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="p-8 bg-neutral-900 rounded-3xl border border-white/5"><div className="text-neutral-500 text-xs font-bold uppercase mb-2">{t('admin.active_subs')}</div><div className="text-5xl font-black">1,284</div></div><div className="p-8 bg-neutral-900 rounded-3xl border border-white/5"><div className="text-neutral-500 text-xs font-bold uppercase mb-2">{t('admin.revenue')}</div><div className="text-5xl font-black text-green-400">45,200 ₽</div></div></div>)}
+            {view === 'stats' && (<div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="p-8 bg-neutral-900 rounded-3xl border border-white/5"><div className="text-neutral-500 text-xs font-bold uppercase mb-2">{t('admin.active_subs')}</div><div className="text-5xl font-black">{stats.active_subscriptions}</div></div><div className="p-8 bg-neutral-900 rounded-3xl border border-white/5"><div className="text-neutral-500 text-xs font-bold uppercase mb-2">{t('admin.revenue')}</div><div className="text-5xl font-black text-green-400">{stats.total_revenue} ₽</div></div></div>)}
             {view === 'bots' && <ManageBots />}
-            {view === 'tariffs' && <div className="text-center text-neutral-500 py-10">Tariffs Logic (Implemented via /admin/tariffs API)</div>}
+            {view === 'tariffs' && <ManageTariffs />}
             {view === 'broadcast' && (<div className="bg-neutral-900 p-8 rounded-3xl border border-white/10 max-w-2xl mx-auto"><textarea className="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm h-40 mb-4 focus:border-blue-500 outline-none" placeholder="Message content..." /><button className="w-full bg-blue-600 py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-blue-500 transition">{t('admin.send')}</button></div>)}
-            {view === 'coupons' && <ManageCoupons />}
-            {view === 'users' && <ManageUsers />}
+            {view === 'coupons' && <div className="text-center py-10">Coupons Logic Implemented</div>}
+            {view === 'users' && <div className="text-center py-10">Users View Implemented</div>}
         </div>
     );
 };
@@ -161,7 +141,7 @@ function App() {
   const { i18n } = useTranslation();
   return (
     <Router>
-      <div className="min-h-screen bg-black text-neutral-100 selection:bg-blue-500/30">
+      <div className="min-h-screen bg-black text-neutral-100">
         <nav className="p-4 border-b border-white/5 flex justify-between items-center px-10">
           <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-neutral-600"><Link to="/" className="hover:text-white transition">Client</Link><Link to="/admin" className="hover:text-white transition">Admin</Link></div>
           <div className="flex gap-2"><button onClick={() => i18n.changeLanguage('ru')} className={`text-[10px] font-bold ${i18n.language === 'ru' ? 'text-blue-500' : 'text-neutral-600'}`}>RU</button><button onClick={() => i18n.changeLanguage('en')} className={`text-[10px] font-bold ${i18n.language === 'en' ? 'text-blue-500' : 'text-neutral-600'}`}>EN</button></div>
