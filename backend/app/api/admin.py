@@ -160,6 +160,29 @@ async def list_subscriptions(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Subscription).order_by(Subscription.end_date.desc()).limit(100))
     return result.scalars().all()
 
+@router.post("/users/{user_id}/extend")
+async def extend_user_subscription(user_id: int, tariff_id: int = Body(...), days: int = Body(...), db: AsyncSession = Depends(get_db)):
+    from app.models.models import Subscription
+    from datetime import datetime, timedelta
+    
+    # Check if there is an active sub
+    res = await db.execute(select(Subscription).where(Subscription.user_id == user_id, Subscription.tariff_id == tariff_id, Subscription.is_active == True))
+    sub = res.scalar_one_or_none()
+    
+    if sub:
+        sub.end_date += timedelta(days=days)
+    else:
+        sub = Subscription(
+            user_id=user_id, tariff_id=tariff_id,
+            start_date=datetime.now(),
+            end_date=datetime.now() + timedelta(days=days),
+            is_active=True
+        )
+        db.add(sub)
+    
+    await db.commit()
+    return {"status": "ok", "new_end_date": sub.end_date}
+
 @router.get("/channels")
 async def list_channels(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Channel))
