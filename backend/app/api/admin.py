@@ -60,6 +60,46 @@ async def delete_tariff(tariff_id: int, db: AsyncSession = Depends(get_db)):
         await db.commit()
     return {"status": "deleted"}
 
+class CouponCreate(BaseModel):
+    code: str
+    discount_type: str # percent / fixed
+    value: float
+    usage_limit: Optional[int] = 1
+
+@router.get("/coupons")
+async def list_coupons(db: AsyncSession = Depends(get_db)):
+    from app.models.models import Coupon
+    result = await db.execute(select(Coupon))
+    return result.scalars().all()
+
+@router.post("/coupons")
+async def add_coupon(data: CouponCreate, db: AsyncSession = Depends(get_db)):
+    from app.models.models import Coupon
+    new_coupon = Coupon(
+        code=data.code,
+        discount_type=data.discount_type,
+        value=data.value,
+        usage_limit=data.usage_limit
+    )
+    db.add(new_coupon)
+    await db.commit()
+    return new_coupon
+
+@router.delete("/coupons/{coupon_id}")
+async def delete_coupon(coupon_id: int, db: AsyncSession = Depends(get_db)):
+    from app.models.models import Coupon
+    result = await db.execute(select(Coupon).where(Coupon.id == coupon_id))
+    coupon = result.scalar_one_or_none()
+    if coupon:
+        await db.delete(coupon)
+        await db.commit()
+    return {"status": "deleted"}
+
+@router.get("/users")
+async def list_users(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User))
+    return result.scalars().all()
+
 @router.get("/channels")
 async def list_channels(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Channel))

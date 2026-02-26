@@ -1,5 +1,22 @@
 {
   "welcome": "Welcome to Membersly",
   "tariffs": "Available Tariffs",
-  "pay": "Pay"
+  "pay": "Pay",
+  "promo": "Promo code (if any)",
+  "admin": {
+    "title": "Membersly Admin",
+    "stats": "Stats",
+    "bots": "Bots",
+    "tariffs": "Tariffs",
+    "broadcast": "Broadcast",
+    "coupons": "Coupons",
+    "users": "Users",
+    "revenue": "Total Revenue",
+    "active_subs": "Active Subs",
+    "add_bot": "Add new bot",
+    "create_tariff": "Create tariff",
+    "create_coupon": "Create coupon",
+    "send": "Send",
+    "delete": "Delete"
+  }
 }
