@@ -26,8 +26,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @app.on_event("startup")
 async def startup_event():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Base.metadata.create_all is removed to prevent conflicts with Alembic
     
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(AdminUser).limit(1))

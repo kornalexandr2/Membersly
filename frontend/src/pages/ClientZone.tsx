@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
-  const { t } = useTranslation();
   const [tariffs, setTariffs] = useState<any[]>([]);
   const [userSubs, setUserSubs] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -88,7 +86,7 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
           </div>
           <div className="text-right">
             <div className="text-[10px] font-black uppercase text-neutral-500 mb-1">Referral Link</div>
-            <div className="text-[10px] font-mono text-blue-400">t.me/{botUsername}?start=ref_{userId}</div>
+            <div className="text-[10px] font-mono text-blue-400">t.me/{botUsername}?start=ref_{tgUser?.id || profile?.telegram_id || 'ERROR'}</div>
           </div>
       </div>
 

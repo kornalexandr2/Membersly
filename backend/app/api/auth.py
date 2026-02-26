@@ -1,10 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 import jwt
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
+import hmac
+import hashlib
+import json
+from urllib.parse import parse_qsl
 
 from app.core.db import get_db
 from app.models.models import AdminUser, User
@@ -12,32 +17,17 @@ from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 ALGORITHM = "HS256"
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 class AdminLogin(BaseModel):
     login: str
     password: str
 
-from fastapi import APIRouter, Depends, HTTPException, Body, status
-from fastapi.security import OAuth2PasswordBearer
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
-async def get_current_admin(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
-        login: str = payload.get("sub")
-        if login is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        return login
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-
-import hmac
-import hashlib
-import json
-from urllib.parse import parse_qsl
+class ChangePassword(BaseModel):
+    old_password: str
+    new_password: str
 
 def validate_telegram_data(init_data: str, bot_token: str):
     try:
@@ -55,12 +45,6 @@ def validate_telegram_data(init_data: str, bot_token: str):
     except Exception: pass
     return None
 
-from fastapi.security import OAuth2PasswordBearer
-from app.models.models import AdminUser, User
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-client_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/telegram") # Just for reference
-
 async def get_current_admin(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
@@ -71,24 +55,45 @@ async def get_current_admin(token: str = Depends(oauth2_scheme)):
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        return int(user_id)
+        
+        user_id = int(user_id_str)
+        result = await db.execute(select(User).where(User.telegram_id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        return user_id
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
 @router.post("/telegram")
-async def auth_telegram(initData: str = Body(...)):
+async def auth_telegram(initData: str = Body(...), db: AsyncSession = Depends(get_db)):
     user_data = validate_telegram_data(initData, settings.bot_token)
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid Telegram data")
     
+    # Save or update user in database
+    user_id = user_data.get('id')
+    result = await db.execute(select(User).where(User.telegram_id == user_id))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        user = User(
+            telegram_id=user_id,
+            username=user_data.get('username'),
+            full_name=f"{user_data.get('first_name', '')} {user_data.get('last_name', '')}".strip(),
+            language_code=user_data.get('language_code', 'en')
+        )
+        db.add(user)
+        await db.commit()
+    
     # Issue token
-    token = jwt.encode({"sub": str(user_data['id']), "exp": datetime.utcnow() + timedelta(days=30)}, settings.secret_key, algorithm=ALGORITHM)
+    token = jwt.encode({"sub": str(user_id), "exp": datetime.utcnow() + timedelta(days=30)}, settings.secret_key, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer", "user": user_data}
 
 @router.post("/login")
@@ -101,10 +106,6 @@ async def admin_login(data: AdminLogin, db: AsyncSession = Depends(get_db)):
     
     token = jwt.encode({"sub": admin.login, "exp": datetime.utcnow() + timedelta(days=1)}, settings.secret_key, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
-
-class ChangePassword(BaseModel):
-    old_password: str
-    new_password: str
 
 @router.post("/change-password")
 async def admin_change_password(data: ChangePassword, current_admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):

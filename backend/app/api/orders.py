@@ -111,9 +111,7 @@ async def create_order(tariff_id: int = Body(...), coupon_code: str = Body(None)
         if available >= final_price:
             user.balance -= Decimal(str(final_price))
             final_price = 0.0
-        else:
-            final_price -= available
-            user.balance = 0
+        # Частичная оплата балансом отключена для предотвращения списания до оплаты
 
     if final_price <= 0:
         new_sub = Subscription(
