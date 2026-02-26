@@ -32,6 +32,37 @@ async def toggle_auto_renew(sub_id: int, user_id: int = Body(...), db: AsyncSess
     await db.commit()
     return {"auto_renew": sub.auto_renew}
 
+@router.get("/access-link/{sub_id}")
+async def get_access_link(sub_id: int, user_id: int, db: AsyncSession = Depends(get_db)):
+    from app.models.models import Channel, BotConfig
+    # 1. Verify subscription
+    res = await db.execute(
+        select(Subscription).where(Subscription.id == sub_id, Subscription.user_id == user_id, Subscription.is_active == True)
+    )
+    sub = res.scalar_one_or_none()
+    if not sub: raise HTTPException(status_code=403, detail="No active subscription")
+
+    # 2. Get channels for this tariff
+    t_res = await db.execute(select(Tariff).options(selectinload(Tariff.channels)).where(Tariff.id == sub.tariff_id))
+    tariff = t_res.scalar_one()
+    
+    if not tariff.channels: raise HTTPException(status_code=404, detail="No channels linked to this tariff")
+    
+    # 3. Get first channel and its bot
+    channel = tariff.channels[0]
+    b_res = await db.execute(select(BotConfig).where(BotConfig.is_active == True).limit(1))
+    bot_cfg = b_res.scalar_one_or_none()
+    
+    if not bot_cfg: raise HTTPException(status_code=500, detail="No active bots")
+
+    # 4. Generate Link via Bot API
+    try:
+        async with Bot(token=bot_cfg.token).context() as bot:
+            link = await bot.create_chat_invite_link(chat_id=channel.telegram_chat_id, member_limit=1)
+            return {"invite_link": link.invite_link}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/create")
 async def create_order(tariff_id: int = Body(...), user_id: int = Body(...), coupon_code: str = Body(None), use_balance: bool = Body(False), db: AsyncSession = Depends(get_db)):
     # 1. Get Tariff & User

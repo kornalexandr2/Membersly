@@ -45,6 +45,12 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
     });
   };
 
+  const getAccess = (s_id: number) => {
+    fetch(`${apiUrl}/orders/access-link/${s_id}?user_id=${userId}`)
+        .then(res => res.json())
+        .then(data => { if(data.invite_link) window.location.href = data.invite_link; });
+  };
+
   const toggleRenew = (s_id: number) => {
     fetch(`${apiUrl}/orders/subscriptions/${s_id}/toggle-renew`, {
         method: 'POST',
@@ -80,13 +86,18 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 ml-6 italic">Active Protocols</h2>
             <div className="grid gap-3">
                 {userSubs.map(sub => (
-                    <div key={sub.id} className="bg-neutral-900 p-6 rounded-[2rem] border border-white/5 flex justify-between items-center group hover:border-white/10 transition-all">
-                        <div>
-                            <div className="font-black uppercase tracking-tight text-lg group-hover:text-blue-400 transition">{sub.tariff?.title || 'Protocol'}</div>
-                            <div className="text-[10px] text-neutral-500 font-bold">EXPIRES: {new Date(sub.end_date).toLocaleDateString()}</div>
+                    <div key={sub.id} className="bg-neutral-900 p-6 rounded-[2rem] border border-white/5 space-y-4 shadow-xl">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <div className="font-black uppercase tracking-tight text-lg">{sub.tariff?.title || 'Protocol'}</div>
+                                <div className="text-[10px] text-neutral-500 font-bold">EXPIRES: {new Date(sub.end_date).toLocaleDateString()}</div>
+                            </div>
+                            <button onClick={() => toggleRenew(sub.id)} className={`text-[8px] font-black uppercase px-3 py-1 rounded-lg border transition-all ${sub.auto_renew ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-neutral-600'}`}>
+                                {sub.auto_renew ? 'Auto-renew ON' : 'Auto-renew OFF'}
+                            </button>
                         </div>
-                        <button onClick={() => toggleRenew(sub.id)} className={`text-[9px] font-black uppercase px-4 py-2 rounded-xl border transition-all ${sub.auto_renew ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 border-white/10 text-neutral-600'}`}>
-                            {sub.auto_renew ? 'Renew ON' : 'Renew OFF'}
+                        <button onClick={() => getAccess(sub.id)} className="w-full bg-white text-black py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-lg">
+                            Get Access Link
                         </button>
                     </div>
                 ))}
@@ -94,9 +105,9 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
         </div>
       )}
 
-      <div className="bg-neutral-900 p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+      <div className="bg-neutral-900 p-8 rounded-[3.5rem] border border-white/5 shadow-2xl">
         <h2 className="text-xl font-black mb-8 uppercase text-white tracking-tighter italic flex items-center gap-3">
-            <span className="w-8 h-[2px] bg-blue-600"></span> Access Tiers
+            <span className="w-8 h-[2px] bg-blue-600"></span> Upgrade Access
         </h2>
         <div className="grid gap-4">
             {tariffs.map(t_item => (
