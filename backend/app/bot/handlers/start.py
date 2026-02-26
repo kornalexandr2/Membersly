@@ -17,25 +17,37 @@ async def start_handler(message: types.Message, i18n: callable):
         result = await session.execute(select(User).where(User.telegram_id == message.from_user.id))
         user = result.scalar_one_or_none()
         
+        args = message.text.split()[1:] if len(message.text.split()) > 1 else []
+        referrer_id = None
+        utm_source = None
+        start_coupon = None
+
+        if args:
+            for arg in args:
+                if arg.startswith('ref_'):
+                    try: referrer_id = int(arg.replace('ref_', ''))
+                    except ValueError: pass
+                elif arg.startswith('utm_'):
+                    utm_source = arg.replace('utm_', '')
+                elif arg.startswith('coupon_'):
+                    start_coupon = arg.replace('coupon_', '')
+
         if not user:
-            # Extract ref if present
-            args = message.text.split()[1:] if len(message.text.split()) > 1 else []
-            referrer_id = None
-            if args and args[0].startswith('ref_'):
-                try:
-                    referrer_id = int(args[0].replace('ref_', ''))
-                except ValueError:
-                    pass
-                    
             user = User(
                 telegram_id=message.from_user.id,
                 username=message.from_user.username,
                 full_name=message.from_user.full_name,
                 language_code=message.from_user.language_code or 'en',
-                referrer_id=referrer_id
+                referrer_id=referrer_id,
+                utm_source=utm_source
             )
             session.add(user)
             await session.commit()
+            
+            if start_coupon:
+                await message.answer(f"🏷 Вы активировали промокод: {start_coupon}")
+        
+    # Build Menu...
 
     builder = InlineKeyboardBuilder()
     builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/"))
