@@ -90,10 +90,82 @@ async def get_tariffs(db: AsyncSession = Depends(get_db)):
     tariffs = result.scalars().all()
     return {"tariffs": tariffs}
 
+from app.core.payments import PaymentService
+from app.models.models import Tariff, User, Channel, AdminUser, Payment, Subscription
+from datetime import datetime, timedelta
+
 @app.post("/orders/create")
 async def create_order(tariff_id: int = Body(...), user_id: int = Body(...), db: AsyncSession = Depends(get_db)):
-    # Placeholder for order creation logic (Yookassa / Telegram Stars)
-    return {"status": "pending", "payment_url": "https://example.com/pay"}
+    # 1. Get Tariff
+    result = await db.execute(select(Tariff).where(Tariff.id == tariff_id))
+    tariff = result.scalar_one_or_none()
+    if not tariff:
+        raise HTTPException(status_code=404, detail="Tariff not found")
+
+    # 2. Create local payment record
+    new_payment = Payment(
+        user_id=user_id,
+        amount=tariff.price,
+        currency=tariff.currency,
+        provider="yookassa",
+        status="pending"
+    )
+    db.add(new_payment)
+    await db.flush() # Get ID
+
+    # 3. Create Yookassa Payment
+    try:
+        yoo_payment = await PaymentService.create_yookassa_payment(
+            amount=float(tariff.price),
+            currency=tariff.currency,
+            description=f"Subscription: {tariff.title}",
+            return_url="https://t.me/your_bot", # Or your webapp URL
+            metadata={"payment_id": new_payment.id, "tariff_id": tariff.id, "user_id": user_id}
+        )
+        
+        new_payment.provider_payment_id = yoo_payment.id
+        await db.commit()
+        
+        return {"status": "pending", "payment_url": yoo_payment.confirmation.confirmation_url}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Payment provider error: {str(e)}")
+
+@app.post("/payments/webhook/yookassa")
+async def yookassa_webhook(data: dict = Body(...), db: AsyncSession = Depends(get_db)):
+    # Simple check for successful payment
+    if data.get("event") == "payment.succeeded":
+        obj = data.get("object")
+        provider_id = obj.get("id")
+        metadata = obj.get("metadata", {})
+        
+        result = await db.execute(select(Payment).where(Payment.provider_payment_id == provider_id))
+        payment = result.scalar_one_or_none()
+        
+        if payment and payment.status == "pending":
+            payment.status = "succeeded"
+            
+            # Create or Extend Subscription
+            tariff_id = int(metadata.get("tariff_id"))
+            user_id = int(metadata.get("user_id"))
+            
+            tariff_result = await db.execute(select(Tariff).where(Tariff.id == tariff_id))
+            tariff = tariff_result.scalar_one()
+            
+            end_date = datetime.now() + timedelta(days=tariff.duration_days)
+            
+            new_sub = Subscription(
+                user_id=user_id,
+                tariff_id=tariff_id,
+                end_date=end_date,
+                is_active=True,
+                auto_renew=tariff.is_recurring,
+                payment_method_id=obj.get("payment_method", {}).get("id") # Save for recurring
+            )
+            db.add(new_sub)
+            await db.commit()
+            
+    return {"status": "ok"}
 
 # --- Admin Management Endpoints ---
 

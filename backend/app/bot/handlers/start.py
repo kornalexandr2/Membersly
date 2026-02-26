@@ -45,8 +45,42 @@ async def start_handler(message: types.Message, i18n: callable):
 
     await message.answer(i18n("welcome_message", name=message.from_user.first_name), reply_markup=builder.as_markup())
 
-@router.chat_join_request()
-async def join_request_handler(chat_join: types.ChatJoinRequest):
+@router.pre_checkout_query()
+async def pre_checkout_query_handler(pre_checkout_query: types.PreCheckoutQuery):
+    await pre_checkout_query.answer(ok=True)
+
+@router.message(types.Message.successful_payment)
+async def successful_payment_handler(message: types.Message):
+    # Here we activate the subscription after Stars payment
+    payload = message.successful_payment.invoice_payload
+    # payload contains tariff_id
+    tariff_id = int(payload)
+    
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Tariff).where(Tariff.id == tariff_id))
+        tariff = result.scalar_one()
+        
+        end_date = datetime.now() + timedelta(days=tariff.duration_days)
+        new_sub = Subscription(
+            user_id=message.from_user.id,
+            tariff_id=tariff_id,
+            end_date=end_date,
+            is_active=True
+        )
+        session.add(new_sub)
+        
+        new_payment = Payment(
+            user_id=message.from_user.id,
+            amount=tariff.price,
+            currency="XTR",
+            provider="telegram_stars",
+            provider_payment_id=message.successful_payment.telegram_payment_charge_id,
+            status="succeeded"
+        )
+        session.add(new_payment)
+        await session.commit()
+
+    await message.answer("Оплата в Stars прошла успешно! Доступ открыт.")
     async with AsyncSessionLocal() as session:
         # Проверяем, есть ли у пользователя активная подписка
         result = await session.execute(
