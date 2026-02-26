@@ -50,6 +50,8 @@ class Channel(Base):
     title = Column(String)
     type = Column(String) # channel or supergroup
     invite_link = Column(String, nullable=True)
+    welcome_text = Column(String, nullable=True)
+    pin_welcome = Column(Boolean, default=False)
 
     tariffs = relationship("Tariff", secondary=channel_tariffs, back_populates="channels")
 

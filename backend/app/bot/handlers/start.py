@@ -144,6 +144,12 @@ async def join_request_handler(chat_join: types.ChatJoinRequest):
         if subscription:
             await chat_join.approve()
             await chat_join.bot.send_message(chat_join.from_user.id, f"✅ Доступ в {chat_join.chat.title} подтвержден!")
+            
+            if channel.welcome_text:
+                msg = await chat_join.bot.send_message(chat_join.chat.id, channel.welcome_text.replace("{name}", chat_join.from_user.full_name))
+                if channel.pin_welcome:
+                    try: await chat_join.bot.pin_chat_message(chat_id=chat_join.chat.id, message_id=msg.message_id)
+                    except Exception: pass
         else:
             await chat_join.decline()
             await chat_join.bot.send_message(chat_join.from_user.id, f"❌ Для доступа в {chat_join.chat.title} необходимо оформить подписку.")

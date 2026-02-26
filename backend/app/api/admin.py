@@ -80,18 +80,20 @@ async def list_channels(db: AsyncSession = Depends(get_db)):
     return result.scalars().all()
 
 @router.post("/channels")
-async def add_channel(chat_id: int, title: str, type: str, db: AsyncSession = Depends(get_db)):
-    new_channel = Channel(telegram_chat_id=chat_id, title=title, type=type)
+async def add_channel(chat_id: int = Body(...), title: str = Body(...), type: str = Body(...), welcome_text: Optional[str] = Body(None), pin_welcome: Optional[bool] = Body(False), db: AsyncSession = Depends(get_db)):
+    new_channel = Channel(telegram_chat_id=chat_id, title=title, type=type, welcome_text=welcome_text, pin_welcome=pin_welcome)
     db.add(new_channel)
     await db.commit()
     return new_channel
 
 @router.patch("/channels/{channel_id}")
-async def update_channel(channel_id: int, title: Optional[str] = Body(None), db: AsyncSession = Depends(get_db)):
+async def update_channel(channel_id: int, title: Optional[str] = Body(None), welcome_text: Optional[str] = Body(None), pin_welcome: Optional[bool] = Body(None), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(Channel).where(Channel.id == channel_id))
     channel = res.scalar_one_or_none()
     if channel:
         if title is not None: channel.title = title
+        if welcome_text is not None: channel.welcome_text = welcome_text
+        if pin_welcome is not None: channel.pin_welcome = pin_welcome
         await db.commit()
     return channel
 
