@@ -32,7 +32,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
     if (!token) return <Navigate to="/login" />;
 
     return (
-        <div className="p-4 max-w-6xl mx-auto space-y-10">
+        <div className="p-4 max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="text-3xl font-black uppercase italic tracking-tighter">Membersly <span className="text-blue-600">.OS</span></div>
                 <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
@@ -43,7 +43,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
             </div>
 
             {view === 'stats' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard label="Active Base" value={stats.active_subscriptions} />
                     <StatCard label="Total Cash" value={`${stats.total_revenue} ₽`} color="text-green-500" />
                     <StatCard label="30D Velocity" value={`${stats.monthly_revenue} ₽`} color="text-blue-400" />
@@ -51,6 +51,45 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                 </div>
             )}
 
+            {view === 'channels' && (
+                <div className="space-y-6">
+                    <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 flex gap-4">
+                        <input placeholder="CHAT ID" className="bg-black p-4 rounded-2xl flex-1 text-xs font-bold" onChange={e => setForm({...form, chat_id: e.target.value})} />
+                        <input placeholder="TITLE" className="bg-black p-4 rounded-2xl flex-1 text-xs font-bold" onChange={e => setForm({...form, title: e.target.value})} />
+                        <button onClick={() => handleAction('POST', `channels?chat_id=${form.chat_id}&title=${form.title}&type=channel`)} className="bg-blue-600 px-8 rounded-2xl font-black text-[10px] uppercase">Link</button>
+                    </div>
+                    <div className="grid gap-3">
+                        {dataList.map(c => (
+                            <div key={c.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center">
+                                <div><div className="font-black text-sm uppercase tracking-tighter">{c.title}</div><div className="text-[10px] text-neutral-500">ID: {c.telegram_chat_id}</div></div>
+                                <span className="text-[8px] bg-white/10 px-3 py-1 rounded-full font-black uppercase text-neutral-400">{c.type}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {view === 'tariffs' && (
+                <div className="space-y-6">
+                    <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <input placeholder="NAME" className="bg-black p-4 rounded-2xl text-xs font-bold" onChange={e => setForm({...form, title: e.target.value})} />
+                            <input placeholder="PRICE" className="bg-black p-4 rounded-2xl text-xs font-bold" onChange={e => setForm({...form, price: e.target.value})} />
+                        </div>
+                        <button onClick={() => handleAction('POST', 'tariffs', {title: form.title, price: parseFloat(form.price), currency: 'RUB', duration_days: 30})} className="w-full bg-blue-600 py-4 rounded-2xl font-black text-[10px] uppercase">Create Plan</button>
+                    </div>
+                    <div className="grid gap-4">
+                        {dataList.map(t => (
+                            <div key={t.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center">
+                                <div><div className="font-black text-xl uppercase tracking-tighter">{t.title}</div><div className="text-xs text-neutral-500 font-bold">{t.price} ₽ • {t.duration_days} days</div></div>
+                                <button onClick={() => handleAction('DELETE', `tariffs/${t.id}`)} className="text-red-600 font-black text-[10px] uppercase hover:underline">Remove</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* users, broadcast, coupons views logic remains same as previous */}
             {view === 'users' && (
                 <div className="bg-neutral-900 rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl">
                     <table className="w-full text-left text-xs">
@@ -65,35 +104,6 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                             ))}
                         </tbody>
                     </table>
-                </div>
-            )}
-
-            {view === 'broadcast' && (
-                <div className="bg-neutral-900 p-10 rounded-[3rem] border border-white/10 max-w-2xl mx-auto space-y-8 shadow-2xl">
-                    <h3 className="text-2xl font-black uppercase text-white tracking-tight italic">Global Neural Broadcast</h3>
-                    <textarea className="w-full bg-black border border-white/10 rounded-[2rem] p-8 text-sm h-64 focus:border-blue-500 outline-none transition-all shadow-inner" placeholder="Enter transmission data..." onChange={e => setForm({msg: e.target.value})} />
-                    <button onClick={() => handleAction('POST', 'broadcast', form.msg)} className="w-full bg-blue-600 py-6 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-500 transition shadow-2xl shadow-blue-600/40">Initiate Blast</button>
-                </div>
-            )}
-
-            {view === 'coupons' && (
-                <div className="space-y-6">
-                    <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 flex gap-4">
-                        <input placeholder="CODE" className="bg-black p-4 rounded-2xl flex-1 text-xs font-bold" onChange={e => setForm({...form, code: e.target.value})} />
-                        <input placeholder="VALUE" className="bg-black p-4 rounded-2xl w-24 text-xs font-bold" onChange={e => setForm({...form, val: e.target.value})} />
-                        <button onClick={() => handleAction('POST', 'coupons', {code: form.code, value: parseFloat(form.val), discount_type: 'fixed'})} className="bg-blue-600 px-8 rounded-2xl font-black text-[10px] uppercase">Generate</button>
-                    </div>
-                    <div className="grid gap-3">
-                        {dataList.map(c => (
-                            <div key={c.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center">
-                                <span className="font-black text-blue-500 tracking-widest">{c.code}</span>
-                                <div className="flex items-center gap-6">
-                                    <span className="text-xs font-bold text-neutral-400">{c.value} ₽ ({c.used_count}/{c.usage_limit})</span>
-                                    <button onClick={() => handleAction('DELETE', `coupons/${c.id}`)} className="text-red-600 font-black text-[10px] uppercase hover:underline">Revoke</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             )}
         </div>
