@@ -1,5 +1,5 @@
 from aiogram import Router, types
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -9,6 +9,14 @@ from app.models.models import User, Subscription, Tariff, Payment
 from app.core.db import AsyncSessionLocal
 
 router = Router()
+
+@router.message(Command("profile"))
+async def profile_command_handler(message: types.Message, i18n: callable):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User).where(User.telegram_id == message.from_user.id))
+        user = result.scalar_one_or_none()
+        balance = user.balance if user else 0
+    await message.answer(i18n("balance_info", id=message.from_user.id, balance=balance))
 
 @router.message(CommandStart())
 async def start_handler(message: types.Message, i18n: callable):
@@ -119,15 +127,10 @@ async def successful_payment_handler(message: types.Message):
 @router.chat_join_request()
 async def join_request_handler(chat_join: types.ChatJoinRequest):
     async with AsyncSessionLocal() as session:
-        # Ищем канал в нашей базе по его telegram_chat_id
         c_res = await session.execute(select(Channel).where(Channel.telegram_chat_id == chat_join.chat.id))
         channel = c_res.scalar_one_or_none()
-        
-        if not channel:
-            # Если канала нет в базе, по умолчанию отклоняем (или можно игнорировать)
-            return
+        if not channel: return
 
-        # Проверяем, есть ли у пользователя активная подписка на тариф, включающий этот канал
         result = await session.execute(
             select(Subscription).join(Tariff).join(Tariff.channels).where(
                 Subscription.user_id == chat_join.from_user.id,
