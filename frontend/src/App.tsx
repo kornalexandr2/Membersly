@@ -1,47 +1,63 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
+
+const ClientZone = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">{t('welcome')}</h1>
+      <div className="bg-white/10 p-4 rounded-xl shadow-lg border border-white/20">
+        <h2 className="text-lg font-medium mb-3">{t('tariffs')}</h2>
+        <div className="space-y-2">
+            <div className="p-3 bg-blue-500/20 rounded-lg flex justify-between items-center">
+                <span>Standard (1 Mo)</span>
+                <button className="bg-blue-500 px-3 py-1 rounded text-sm">499 ₽</button>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminDashboard = () => {
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-6">Admin Panel</h1>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+          <h3 className="text-gray-400 text-sm">Active Subs</h3>
+          <p className="text-2xl font-bold">1,284</p>
+        </div>
+        <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+          <h3 className="text-gray-400 text-sm">Revenue (MTD)</h3>
+          <p className="text-2xl font-bold">45,200 ₽</p>
+        </div>
+      </div>
+      <div className="mt-8 space-y-4">
+        <button className="w-full py-3 bg-indigo-600 rounded-lg font-semibold">Manage Bots</button>
+        <button className="w-full py-3 bg-indigo-600 rounded-lg font-semibold">Edit Tariffs</button>
+        <button className="w-full py-3 bg-indigo-600 rounded-lg font-semibold text-red-400">Broadcast Message</button>
+      </div>
+    </div>
+  );
+};
 
 function App() {
-  const { t, i18n } = useTranslation();
-  const [initData, setInitData] = useState<string>('');
-
-  useEffect(() => {
-    // Check if running in Telegram WebApp
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      setInitData(tg.initData);
-      
-      // Update theme
-      document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
-      document.body.style.color = tg.themeParams.text_color || '#000000';
-    }
-  }, []);
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
-
   return (
-    <div className="p-4 flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-2xl font-bold mb-4">{t('welcome')}</h1>
-      <div className="flex gap-2 mb-4">
-        <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={() => changeLanguage('ru')}>RU</button>
-        <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={() => changeLanguage('en')}>EN</button>
+    <Router>
+      <div className="min-h-screen bg-neutral-950 text-neutral-100">
+        <nav className="p-4 border-b border-white/10 flex gap-4 text-sm font-medium">
+          <Link to="/" className="hover:text-blue-400 transition">User View</Link>
+          <Link to="/admin" className="hover:text-blue-400 transition">Admin Panel</Link>
+        </nav>
+        <Routes>
+          <Route path="/" element={<ClientZone />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
       </div>
-      <div className="p-4 border rounded shadow-md w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-2">{t('tariffs')}</h2>
-        {/* Placeholder for tariffs list */}
-        <div className="mb-2 p-2 bg-gray-100 rounded text-gray-800">Premium 1M - 500 RUB</div>
-        <div className="mb-2 p-2 bg-gray-100 rounded text-gray-800">VIP 1M - 1500 RUB</div>
-      </div>
-      {initData && (
-        <div className="mt-4 text-xs text-gray-500 overflow-hidden text-ellipsis w-full max-w-md">
-          Tg InitData: {initData}
-        </div>
-      )}
-    </div>
-  )
+    </Router>
+  );
 }
 
-export default App
+export default App;

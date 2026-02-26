@@ -77,12 +77,52 @@ def validate_telegram_data(init_data: str, bot_token: str) -> dict:
         pass
     return None
 
-@app.post("/auth/telegram")
-async def auth_telegram(data: TelegramAuth):
-    user = validate_telegram_data(data.initData, settings.bot_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid auth data")
-    return {"status": "ok", "user": user}
+import jwt
+
+SECRET_KEY = "super-secret-key-change-me"
+ALGORITHM = "HS256"
+
+class AdminLogin(BaseModel):
+    login: str
+    password: str
+
+@app.post("/auth/admin")
+async def admin_login(data: AdminLogin, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AdminUser).where(AdminUser.login == data.login))
+    admin = result.scalar_one_or_none()
+    
+    if not admin or not pwd_context.verify(data.password, admin.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    token = jwt.encode({"sub": admin.login, "exp": datetime.utcnow() + timedelta(days=1)}, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.post("/admin/broadcast")
+async def admin_broadcast(text: str = Body(...), db: AsyncSession = Depends(get_db)):
+    from app.models.models import BotConfig, User
+    from aiogram import Bot
+    
+    # Get all active bots
+    bots_result = await db.execute(select(BotConfig).where(BotConfig.is_active == True))
+    bots = bots_result.scalars().all()
+    
+    # Get all users
+    users_result = await db.execute(select(User))
+    users = users_result.scalars().all()
+    
+    count = 0
+    if bots:
+        # Use the first active bot for broadcast
+        bot = Bot(token=bots[0].token)
+        for user in users:
+            try:
+                await bot.send_message(user.telegram_id, text)
+                count += 1
+            except Exception:
+                continue
+        await bot.session.close()
+        
+    return {"status": "ok", "sent_to": count}
 
 @app.get("/tariffs")
 async def get_tariffs(db: AsyncSession = Depends(get_db)):
