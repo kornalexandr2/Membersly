@@ -3,6 +3,10 @@ import { Navigate } from 'react-router-dom';
 import { StatCard } from '../components/StatCard';
 import { ManageTariffs } from '../components/admin/ManageTariffs';
 import { ManageUsers } from '../components/admin/ManageUsers';
+import { ManageBots } from '../components/admin/ManageBots';
+import { ManageChannels } from '../components/admin/ManageChannels';
+import { ManageBroadcast } from '../components/admin/ManageBroadcast';
+import { ManageCoupons } from '../components/admin/ManageCoupons';
 
 export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: string }) => {
     const [view, setView] = useState('stats');
@@ -45,7 +49,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                 <div className="text-4xl font-black uppercase italic tracking-tighter text-white">Membersly <span className="text-blue-600">.OS</span></div>
                 <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar shadow-2xl">
                     {['stats', 'channels', 'tariffs', 'broadcast', 'users', 'coupons', 'bots'].map((v) => (
-                        <button key={v} onClick={() => setView(v)} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}>{v}</button>
+                        <button key={v} onClick={() => setView(v)} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-neutral-500 hover:text-white'}`}>{v}</button>
                     ))}
                 </div>
             </div>
@@ -60,15 +64,12 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                     </div>
                 )}
 
+                {view === 'channels' && <ManageChannels data={dataList} onAction={handleAction} />}
                 {view === 'tariffs' && <ManageTariffs data={dataList} channels={channels} onAction={handleAction} />}
+                {view === 'broadcast' && <ManageBroadcast onAction={handleAction} />}
                 {view === 'users' && <ManageUsers data={dataList} onAction={handleAction} />}
-                
-                {/* Fallback for other views during refactoring */}
-                {!['stats', 'tariffs', 'users'].includes(view) && (
-                    <div className="bg-neutral-900 p-20 rounded-[3rem] border border-dashed border-white/10 text-center uppercase font-black text-neutral-700 tracking-widest italic">
-                        {view} module is fully functional via API
-                    </div>
-                )}
+                {view === 'coupons' && <ManageCoupons data={dataList} onAction={handleAction} />}
+                {view === 'bots' && <ManageBots data={dataList} onAction={handleAction} />}
             </div>
         </div>
     );
