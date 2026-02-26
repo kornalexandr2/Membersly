@@ -60,10 +60,13 @@ class TariffCreate(BaseModel):
     currency: str
     duration_days: int
     is_recurring: bool = False
+    trial_days: int = 0
+    channel_ids: List[int] = []
 
 @router.get("/tariffs")
 async def list_tariffs(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Tariff))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(select(Tariff).options(selectinload(Tariff.channels)))
     return result.scalars().all()
 
 @router.post("/tariffs")
@@ -73,8 +76,15 @@ async def add_tariff(tariff_data: TariffCreate, db: AsyncSession = Depends(get_d
         price=tariff_data.price,
         currency=tariff_data.currency,
         duration_days=tariff_data.duration_days,
-        is_recurring=tariff_data.is_recurring
+        is_recurring=tariff_data.is_recurring,
+        trial_days=tariff_data.trial_days
     )
+    
+    if tariff_data.channel_ids:
+        res = await db.execute(select(Channel).where(Channel.id.in_(tariff_data.channel_ids)))
+        channels = res.scalars().all()
+        new_tariff.channels = channels
+
     db.add(new_tariff)
     await db.commit()
     return new_tariff
