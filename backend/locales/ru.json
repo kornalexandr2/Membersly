@@ -3,5 +3,6 @@
 Я бот для управления подписками.",
     "btn_web_app": "🌐 Открыть приложение",
     "btn_my_subscriptions": "📦 Мои подписки",
-    "btn_support": "🆘 Поддержка"
+    "btn_support": "🆘 Поддержка",
+    "coupon_activated": "🏷 Вы активировали промокод: {coupon}"
 }

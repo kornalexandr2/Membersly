@@ -45,9 +45,15 @@ async def start_handler(message: types.Message, i18n: callable):
             await session.commit()
             
             if start_coupon:
-                await message.answer(f"🏷 Вы активировали промокод: {start_coupon}")
+                await message.answer(i18n("coupon_activated", coupon=start_coupon))
         
-    # Build Menu...
+    builder = InlineKeyboardBuilder()
+    builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/")) # Should be real URL
+    builder.button(text=i18n("btn_my_subscriptions"), callback_data="my_subs")
+    builder.button(text=i18n("btn_support"), url="https://t.me/support")
+    builder.adjust(1)
+
+    await message.answer(i18n("welcome_message", name=message.from_user.first_name), reply_markup=builder.as_markup())
 
     builder = InlineKeyboardBuilder()
     builder.button(text=i18n("btn_web_app"), web_app=types.WebAppInfo(url="https://example.com/"))
