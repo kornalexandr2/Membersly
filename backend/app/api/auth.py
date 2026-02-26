@@ -55,12 +55,41 @@ def validate_telegram_data(init_data: str, bot_token: str):
     except Exception: pass
     return None
 
+from fastapi.security import OAuth2PasswordBearer
+from app.models.models import AdminUser, User
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+client_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/telegram") # Just for reference
+
+async def get_current_admin(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        login: str = payload.get("sub")
+        if login is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        return login
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        return int(user_id)
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+
 @router.post("/telegram")
 async def auth_telegram(initData: str = Body(...)):
     user_data = validate_telegram_data(initData, settings.bot_token)
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid Telegram data")
-    return {"status": "ok", "user": user_data}
+    
+    # Issue token
+    token = jwt.encode({"sub": str(user_data['id']), "exp": datetime.utcnow() + timedelta(days=30)}, settings.secret_key, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer", "user": user_data}
 
 @router.post("/login")
 async def admin_login(data: AdminLogin, db: AsyncSession = Depends(get_db)):

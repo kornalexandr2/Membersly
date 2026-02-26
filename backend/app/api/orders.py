@@ -1,28 +1,29 @@
-from fastapi import APIRouter, Depends, Body, HTTPException
+from fastapi import APIRouter, Depends, Body, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional
+from sqlalchemy.orm import selectinload
 
 from app.core.db import get_db
-from app.models.models import Tariff, Payment, Subscription, Coupon, User
+from app.models.models import Tariff, Payment, Subscription, Coupon, User, Channel, BotConfig
 from app.core.payments import PaymentService
 from app.core.config import settings
 from aiogram import Bot
+from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
-@router.get("/subscriptions/{user_id}")
-async def list_user_subscriptions(user_id: int, db: AsyncSession = Depends(get_db)):
-    from sqlalchemy.orm import selectinload
+@router.get("/subscriptions")
+async def list_user_subscriptions(user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Subscription).options(selectinload(Subscription.tariff)).where(Subscription.user_id == user_id)
     )
     return result.scalars().all()
 
 @router.post("/subscriptions/{sub_id}/toggle-renew")
-async def toggle_auto_renew(sub_id: int, user_id: int = Body(...), db: AsyncSession = Depends(get_db)):
+async def toggle_auto_renew(sub_id: int, user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Subscription).where(Subscription.id == sub_id, Subscription.user_id == user_id)
     )
@@ -33,8 +34,7 @@ async def toggle_auto_renew(sub_id: int, user_id: int = Body(...), db: AsyncSess
     return {"auto_renew": sub.auto_renew}
 
 @router.get("/access-link/{sub_id}")
-async def get_access_link(sub_id: int, user_id: int, db: AsyncSession = Depends(get_db)):
-    from app.models.models import Channel, BotConfig
+async def get_access_link(sub_id: int, user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     # 1. Verify subscription
     res = await db.execute(
         select(Subscription).where(Subscription.id == sub_id, Subscription.user_id == user_id, Subscription.is_active == True)
@@ -64,7 +64,7 @@ async def get_access_link(sub_id: int, user_id: int, db: AsyncSession = Depends(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/create")
-async def create_order(tariff_id: int = Body(...), user_id: int = Body(...), coupon_code: str = Body(None), use_balance: bool = Body(False), db: AsyncSession = Depends(get_db)):
+async def create_order(tariff_id: int = Body(...), coupon_code: str = Body(None), use_balance: bool = Body(False), user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     # 1. Get Tariff & User
     result = await db.execute(select(Tariff).where(Tariff.id == tariff_id))
     tariff = result.scalar_one_or_none()

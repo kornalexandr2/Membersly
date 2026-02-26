@@ -10,14 +10,16 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
   const [botUsername, setBotUsername] = useState('bot');
   const [coupon, setCoupon] = useState('');
 
-  const userId = tgUser?.id || 12345;
+  const [token, setToken] = useState<string | null>(localStorage.getItem('user_token'));
 
   const fetchData = async () => {
+    if (!token) return;
     try {
+        const headers = { 'Authorization': `Bearer ${token}` };
         const [tRes, sRes, pRes, cRes] = await Promise.all([
             fetch(`${apiUrl}/tariffs`),
-            fetch(`${apiUrl}/orders/subscriptions/${userId}`),
-            fetch(`${apiUrl}/profile/${userId}`),
+            fetch(`${apiUrl}/orders/subscriptions`, { headers }),
+            fetch(`${apiUrl}/profile`, { headers }),
             fetch(`${apiUrl}/config`)
         ]);
         setTariffs(await tRes.json());
@@ -30,15 +32,31 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
-    if (tg) { tg.ready(); setTgUser(tg.initDataUnsafe?.user); }
+    if (tg && tg.initData) {
+      tg.ready();
+      setTgUser(tg.initDataUnsafe?.user);
+      
+      // Perform Telegram Auth
+      fetch(`${apiUrl}/auth/telegram`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tg.initData)
+      }).then(res => res.json()).then(data => {
+          if (data.access_token) {
+              setToken(data.access_token);
+              localStorage.setItem('user_token', data.access_token);
+          }
+      });
+    }
     fetchData();
-  }, [tgUser?.id, apiUrl]);
+  }, [apiUrl, token]);
 
   const handlePay = (t_id: number) => {
+    if (!token) return;
     fetch(`${apiUrl}/orders/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tariff_id: t_id, user_id: userId, use_balance: true, coupon_code: coupon })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ tariff_id: t_id, use_balance: true, coupon_code: coupon })
     }).then(res => res.json()).then(data => { 
         if(data.payment_url) window.location.href = data.payment_url; 
         else if (data.status === 'succeeded') { alert('Activated!'); fetchData(); }
@@ -46,16 +64,17 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
   };
 
   const getAccess = (s_id: number) => {
-    fetch(`${apiUrl}/orders/access-link/${s_id}?user_id=${userId}`)
+    if (!token) return;
+    fetch(`${apiUrl}/orders/access-link/${s_id}`, { headers: { 'Authorization': `Bearer ${token}` }})
         .then(res => res.json())
         .then(data => { if(data.invite_link) window.location.href = data.invite_link; });
   };
 
   const toggleRenew = (s_id: number) => {
+    if (!token) return;
     fetch(`${apiUrl}/orders/subscriptions/${s_id}/toggle-renew`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userId)
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     }).then(() => fetchData());
   };
 
