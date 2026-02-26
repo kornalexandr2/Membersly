@@ -10,8 +10,8 @@ from urllib.parse import parse_qsl
 
 from app.core.config import settings
 from passlib.context import CryptContext
-from app.models.models import Tariff, User, Channel, AdminUser
-from app.core.db import get_db, AsyncSessionLocal
+from app.models.base import Base
+from app.core.db import get_db, AsyncSessionLocal, engine
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -19,8 +19,14 @@ app = FastAPI(title="Membersly API")
 
 @app.on_event("startup")
 async def startup_event():
+    # 1. Automatic table creation/validation
+    async with engine.begin() as conn:
+        # This will create tables if they don't exist.
+        # For a "commercial" app, it's the safest way for initial setup.
+        await conn.run_sync(Base.metadata.create_all)
+    
     async with AsyncSessionLocal() as session:
-        # Check if admin exists
+        # 2. Check if admin exists
         result = await session.execute(select(AdminUser).limit(1))
         admin = result.scalar_one_or_none()
         

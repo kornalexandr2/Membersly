@@ -43,12 +43,7 @@ YOOKASSA_SECRET_KEY=
 ```bash
 docker-compose up -d --build
 ```
-
-### 2.4. Инициализация Базы Данных
-Выполните миграции для создания таблиц:
-```bash
-docker-compose exec backend alembic upgrade head
-```
+После запуска все таблицы в базе данных будут созданы автоматически при старте сервиса `backend`.
 
 ---
 
