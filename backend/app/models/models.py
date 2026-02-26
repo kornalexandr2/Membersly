@@ -114,3 +114,12 @@ class AdminUser(Base):
     id = Column(Integer, primary_key=True, index=True)
     login = Column(String, unique=True, index=True)
     password_hash = Column(String)
+
+class BotConfig(Base):
+    __tablename__ = "bot_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True)
+    title = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

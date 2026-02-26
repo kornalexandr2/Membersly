@@ -94,3 +94,45 @@ async def get_tariffs(db: AsyncSession = Depends(get_db)):
 async def create_order(tariff_id: int = Body(...), user_id: int = Body(...), db: AsyncSession = Depends(get_db)):
     # Placeholder for order creation logic (Yookassa / Telegram Stars)
     return {"status": "pending", "payment_url": "https://example.com/pay"}
+
+# --- Admin Management Endpoints ---
+
+class BotCreate(BaseModel):
+    token: str
+    title: Optional[str] = None
+
+@app.get("/admin/bots")
+async def list_bots(db: AsyncSession = Depends(get_db)):
+    from app.models.models import BotConfig
+    result = await db.execute(select(BotConfig))
+    return result.scalars().all()
+
+@app.post("/admin/bots")
+async def add_bot(bot_data: BotCreate, db: AsyncSession = Depends(get_db)):
+    from app.models.models import BotConfig
+    new_bot = BotConfig(token=bot_data.token, title=bot_data.title)
+    db.add(new_bot)
+    await db.commit()
+    return new_bot
+
+@app.delete("/admin/bots/{bot_id}")
+async def delete_bot(bot_id: int, db: AsyncSession = Depends(get_db)):
+    from app.models.models import BotConfig
+    result = await db.execute(select(BotConfig).where(BotConfig.id == bot_id))
+    bot = result.scalar_one_or_none()
+    if bot:
+        await db.delete(bot)
+        await db.commit()
+    return {"status": "deleted"}
+
+@app.get("/admin/channels")
+async def list_channels(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Channel))
+    return result.scalars().all()
+
+@app.post("/admin/channels")
+async def add_channel(chat_id: int, title: str, type: str, db: AsyncSession = Depends(get_db)):
+    new_channel = Channel(telegram_chat_id=chat_id, title=title, type=type)
+    db.add(new_channel)
+    await db.commit()
+    return new_channel
