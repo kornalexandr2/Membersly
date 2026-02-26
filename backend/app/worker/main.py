@@ -63,7 +63,10 @@ async def autorenew_subscriptions(ctx):
     for sub in res.scalars().all():
         t_res = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
         tariff = t_res.scalar_one_or_none()
-        if tariff:
+        u_res = await session.execute(select(User).where(User.telegram_id == sub.user_id))
+        user = u_res.scalar_one_or_none()
+        
+        if tariff and user:
             try:
                 pay = await PaymentService.charge_recurring(amount=float(tariff.price), currency=tariff.currency, payment_method_id=sub.payment_method_id, description=f"Renew: {tariff.title}")
                 if pay and pay.status == "succeeded":
@@ -74,8 +77,6 @@ async def autorenew_subscriptions(ctx):
                     except Exception: pass
                 else:
                     # Notify failure
-                    u_res = await session.execute(select(User).where(User.telegram_id == sub.user_id))
-                    user = u_res.scalar_one()
                     try: await bot.send_message(sub.user_id, _(user.language_code, "renew_failed"))
                     except Exception: pass
             except Exception: pass
