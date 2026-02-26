@@ -33,8 +33,9 @@ async def toggle_auto_renew(sub_id: int, user_id: int = Depends(get_current_user
     await db.commit()
     return {"auto_renew": sub.auto_renew}
 
-@router.get("/access-link/{sub_id}")
-async def get_access_link(sub_id: int, user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+@router.get("/access-link/{sub_id}/{channel_id}")
+async def get_access_link(sub_id: int, channel_id: int, user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from app.models.models import Channel, BotConfig
     # 1. Verify subscription
     res = await db.execute(
         select(Subscription).where(Subscription.id == sub_id, Subscription.user_id == user_id, Subscription.is_active == True)
@@ -42,14 +43,14 @@ async def get_access_link(sub_id: int, user_id: int = Depends(get_current_user),
     sub = res.scalar_one_or_none()
     if not sub: raise HTTPException(status_code=403, detail="No active subscription")
 
-    # 2. Get channels for this tariff
+    # 2. Verify channel is part of the tariff
     t_res = await db.execute(select(Tariff).options(selectinload(Tariff.channels)).where(Tariff.id == sub.tariff_id))
     tariff = t_res.scalar_one()
     
-    if not tariff.channels: raise HTTPException(status_code=404, detail="No channels linked to this tariff")
+    channel = next((c for c in tariff.channels if c.id == channel_id), None)
+    if not channel: raise HTTPException(status_code=404, detail="Channel not found in this tariff")
     
-    # 3. Get first channel and its bot
-    channel = tariff.channels[0]
+    # 3. Get an active bot
     b_res = await db.execute(select(BotConfig).where(BotConfig.is_active == True).limit(1))
     bot_cfg = b_res.scalar_one_or_none()
     

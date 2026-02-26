@@ -63,9 +63,9 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
     });
   };
 
-  const getAccess = (s_id: number) => {
+  const getAccess = (s_id: number, c_id: number) => {
     if (!token) return;
-    fetch(`${apiUrl}/orders/access-link/${s_id}`, { headers: { 'Authorization': `Bearer ${token}` }})
+    fetch(`${apiUrl}/orders/access-link/${s_id}/${c_id}`, { headers: { 'Authorization': `Bearer ${token}` }})
         .then(res => res.json())
         .then(data => { if(data.invite_link) window.location.href = data.invite_link; });
   };
@@ -80,6 +80,7 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
 
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
+      {/* Profile and Balance Section ... */}
       <div className="flex justify-between items-center bg-neutral-900 p-6 rounded-[2.5rem] border border-white/5 shadow-2xl">
           <div>
             <div className="text-[10px] font-black uppercase text-neutral-500 mb-1 tracking-widest">Global Balance</div>
@@ -103,21 +104,30 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
       {userSubs.length > 0 && (
         <div className="space-y-4">
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 ml-6 italic">Active Protocols</h2>
-            <div className="grid gap-3">
+            <div className="grid gap-4">
                 {userSubs.map(sub => (
-                    <div key={sub.id} className="bg-neutral-900 p-6 rounded-[2rem] border border-white/5 space-y-4 shadow-xl">
+                    <div key={sub.id} className="bg-neutral-900 p-6 rounded-[2rem] border border-white/5 space-y-6 shadow-xl">
                         <div className="flex justify-between items-start">
                             <div>
                                 <div className="font-black uppercase tracking-tight text-lg">{sub.tariff?.title || 'Protocol'}</div>
-                                <div className="text-[10px] text-neutral-500 font-bold">EXPIRES: {new Date(sub.end_date).toLocaleDateString()}</div>
+                                <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">EXPIRES: {new Date(sub.end_date).toLocaleDateString()}</div>
                             </div>
-                            <button onClick={() => toggleRenew(sub.id)} className={`text-[8px] font-black uppercase px-3 py-1 rounded-lg border transition-all ${sub.auto_renew ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-neutral-600'}`}>
-                                {sub.auto_renew ? 'Auto-renew ON' : 'Auto-renew OFF'}
+                            <button onClick={() => toggleRenew(sub.id)} className={`text-[8px] font-black uppercase px-4 py-2 rounded-xl border transition-all ${sub.auto_renew ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-neutral-600'}`}>
+                                {sub.auto_renew ? 'Renew ON' : 'Renew OFF'}
                             </button>
                         </div>
-                        <button onClick={() => getAccess(sub.id)} className="w-full bg-white text-black py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-lg">
-                            Get Access Link
-                        </button>
+                        
+                        <div className="space-y-2">
+                            <p className="text-[9px] font-black text-neutral-600 uppercase tracking-widest ml-2">Assigned Resources</p>
+                            <div className="grid grid-cols-1 gap-2">
+                                {sub.tariff?.channels?.map((c: any) => (
+                                    <button key={c.id} onClick={() => getAccess(sub.id, c.id)} className="w-full bg-white/[0.03] hover:bg-blue-600 text-white p-4 rounded-2xl flex justify-between items-center group transition-all border border-white/5">
+                                        <span className="font-bold text-sm uppercase tracking-tighter">Enter {c.title}</span>
+                                        <span className="text-[10px] font-black uppercase opacity-40 group-hover:opacity-100">Access Link →</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>
