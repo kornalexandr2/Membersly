@@ -38,6 +38,48 @@ async def notify_users(ctx):
         except Exception:
             pass
 
+from app.core.payments import PaymentService
+from decimal import Decimal
+
+async def autorenew_subscriptions(ctx):
+    session = ctx['session']
+    
+    # Находим подписки с auto_renew, которые истекают через 1 час
+    soon = datetime.now() + timedelta(hours=1)
+    result = await session.execute(
+        select(Subscription).where(
+            Subscription.is_active == True,
+            Subscription.auto_renew == True,
+            Subscription.payment_method_id.is_not(None),
+            Subscription.end_date <= soon,
+            Subscription.end_date > datetime.now()
+        )
+    )
+    subs_to_renew = result.scalars().all()
+    
+    for sub in subs_to_renew:
+        # Получаем тариф
+        t_res = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
+        tariff = t_res.scalar_one_or_none()
+        
+        if tariff:
+            try:
+                # Пытаемся списать деньги по токену
+                yoo_payment = await PaymentService.charge_recurring(
+                    amount=float(tariff.price),
+                    currency=tariff.currency,
+                    payment_method_id=sub.payment_method_id,
+                    description=f"Auto-renew: {tariff.title}"
+                )
+                
+                if yoo_payment.status == "succeeded":
+                    # Продлеваем дату окончания
+                    sub.end_date = sub.end_date + timedelta(days=tariff.duration_days)
+                    await session.commit()
+                    print(f"Success auto-renew for user {sub.user_id}")
+            except Exception as e:
+                print(f"Failed to auto-renew sub {sub.id}: {e}")
+
 async def handle_expired_subscriptions(ctx):
     session = ctx['session']
     bot = ctx['bot']

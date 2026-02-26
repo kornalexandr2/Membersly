@@ -8,7 +8,9 @@ from aiogram import Bot
 from app.core.db import get_db
 from app.models.models import BotConfig, Channel, User, Tariff
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+from app.api.auth import get_current_admin
+
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
 @router.get("/stats")
 async def get_stats(db: AsyncSession = Depends(get_db)):
