@@ -32,14 +32,18 @@ class PaymentService:
 
     @staticmethod
     async def charge_recurring(amount: float, currency: str, payment_method_id: str, description: str):
-        # Implementation of payment without user interaction
-        payment = YooPayment.create({
-            "amount": {
-                "value": str(amount),
-                "currency": currency
-            },
-            "capture": True,
-            "payment_method_id": payment_method_id,
-            "description": f"Recurring: {description}"
-        }, uuid.uuid4())
-        return payment
+        try:
+            payment = YooPayment.create({
+                "amount": {
+                    "value": "{:.2f}".format(amount),
+                    "currency": currency
+                },
+                "capture": True,
+                "payment_method_id": payment_method_id,
+                "description": f"Продление: {description}",
+                "save_payment_method": True
+            }, uuid.uuid4())
+            return payment
+        except Exception as e:
+            print(f"Yookassa recurring error: {e}")
+            return None

@@ -9,19 +9,22 @@ const ClientZone = () => {
   const [tariffs, setTariffs] = useState<any[]>([]);
   const [coupon, setCoupon] = useState('');
   const [tgUser, setTgUser] = useState<any>(null);
+  const [botUsername, setBotUsername] = useState('bot');
 
   useEffect(() => {
-    // Real Telegram WebApp Integration
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       tg.ready();
       setTgUser(tg.initDataUnsafe?.user);
+      // Apply Telegram theme
+      document.body.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
     }
     fetch(`${API_URL}/tariffs`).then(res => res.json()).then(data => setTariffs(Array.isArray(data) ? data : []));
+    fetch(`${API_URL}/config`).then(res => res.json()).then(data => setBotUsername(data.bot_username));
   }, []);
 
   const handlePay = (tariffId: number) => {
-    const userId = tgUser?.id || 12345; // Fallback for testing
+    const userId = tgUser?.id || 12345;
     fetch(`${API_URL}/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,7 +32,7 @@ const ClientZone = () => {
     }).then(res => res.json()).then(data => { if(data.payment_url) window.location.href = data.payment_url; });
   };
 
-  const refLink = `https://t.me/your_bot?start=ref_${tgUser?.id || 'id'}`;
+  const refLink = `https://t.me/${botUsername}?start=ref_${tgUser?.id || 'id'}`;
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
