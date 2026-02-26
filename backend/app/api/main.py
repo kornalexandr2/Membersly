@@ -9,10 +9,32 @@ import hashlib
 from urllib.parse import parse_qsl
 
 from app.core.config import settings
-from app.core.db import get_db
-from app.models.models import Tariff, User, Channel
+from passlib.context import CryptContext
+from app.models.models import Tariff, User, Channel, AdminUser
+from app.core.db import get_db, AsyncSessionLocal
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI(title="Membersly API")
+
+@app.on_event("startup")
+async def startup_event():
+    async with AsyncSessionLocal() as session:
+        # Check if admin exists
+        result = await session.execute(select(AdminUser).limit(1))
+        admin = result.scalar_one_or_none()
+        
+        if not admin:
+            default_admin = AdminUser(
+                login="admin",
+                password_hash=pwd_context.hash("admin1234")
+            )
+            session.add(default_admin)
+            await session.commit()
+            print("--- DEFAULT ADMIN CREATED ---")
+            print("Login: admin")
+            print("Password: admin1234")
+            print("-----------------------------")
 
 app.add_middleware(
     CORSMiddleware,
