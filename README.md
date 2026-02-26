@@ -15,7 +15,7 @@
 
 - **Backend:** Python 3.12, FastAPI, Aiogram 3.x, SQLAlchemy 2.0.
 - **Frontend:** React, Vite, TailwindCSS, Shadcn/UI.
-- **Инфраструктура:** PostgreSQL 16, Redis, Arq, Docker Compose, Nginx.
+- **Инфраструктура:** PostgreSQL 16, Redis, Arq, Docker Compose.
 
 ## Быстрый старт
 
