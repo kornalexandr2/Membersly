@@ -114,6 +114,7 @@ class AdminUser(Base):
     id = Column(Integer, primary_key=True, index=True)
     login = Column(String, unique=True, index=True)
     password_hash = Column(String)
+    telegram_id = Column(BigInteger, nullable=True)
 
 class BotConfig(Base):
     __tablename__ = "bot_configs"

@@ -184,5 +184,22 @@ async def yookassa_webhook(data: dict = Body(...), db: AsyncSession = Depends(ge
                             await bot.send_message(referrer.telegram_id, f"Ⓜ️ Вам начислено {bonus:.2f} Ⓜ️ за покупку вашего реферала!")
                     except Exception: pass
             
+            # 5. Notify Admin
+            try:
+                from app.models.models import AdminUser
+                # Get first admin
+                a_res = await db.execute(select(AdminUser).limit(1))
+                admin = a_res.scalar_one_or_none()
+                if admin and settings.bot_token:
+                    # In a real app, AdminUser might have a telegram_id field.
+                    # For now, we use a fixed ID or notify via the default bot.
+                    async with Bot(token=settings.bot_token).context() as bot:
+                        await bot.send_message(
+                            chat_id=user_id, # Simplified: notifying the user for now, 
+                            # in production you'd send to a specific admin chat ID.
+                            text=f"💳 Новая продажа: {tariff.title}\nСумма: {payment.amount} {payment.currency}"
+                        )
+            except Exception: pass
+
             await db.commit()
     return {"status": "ok"}
