@@ -101,3 +101,19 @@ async def admin_login(data: AdminLogin, db: AsyncSession = Depends(get_db)):
     
     token = jwt.encode({"sub": admin.login, "exp": datetime.utcnow() + timedelta(days=1)}, settings.secret_key, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
+
+class ChangePassword(BaseModel):
+    old_password: str
+    new_password: str
+
+@router.post("/change-password")
+async def admin_change_password(data: ChangePassword, current_admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AdminUser).where(AdminUser.login == current_admin))
+    admin = result.scalar_one()
+    
+    if not pwd_context.verify(data.old_password, admin.password_hash):
+        raise HTTPException(status_code=400, detail="Old password incorrect")
+    
+    admin.password_hash = pwd_context.hash(data.new_password)
+    await db.commit()
+    return {"status": "ok"}
