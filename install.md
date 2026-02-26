@@ -54,7 +54,7 @@ YOOKASSA_SECRET_KEY=
 docker-compose up -d --build
 ```
 После запуска сервисы будут доступны по IP-адресу вашего сервера:
-- **Frontend (Web UI):** `http://<ВАШ_IP>:3000`
+- **Frontend (Web UI):** `http://<ВАШ_IP>:6116`
 - **Backend (API):** `http://<ВАШ_IP>:8000`
 
 ---
@@ -67,7 +67,7 @@ docker-compose up -d --build
 1. Добавьте новый **Proxy Host**.
 2. В поле **Domain Names** введите ваш домен (например, `membersly.yourdomain.com`).
 3. В поле **Forward Hostname / IP** введите локальный IP адрес вашего сервера (не используйте `localhost`, используйте реальный IP в локальной сети, например `192.168.1.100` или IP интерфейса `docker0` - `172.17.0.1`).
-4. В поле **Forward Port** укажите `3000` (порт фронтенда).
+4. В поле **Forward Port** укажите `6116` (порт фронтенда).
 5. Перейдите во вкладку **Custom Locations**:
    - Нажмите **Add location**.
    - В поле **Location** введите: `/api/` (обязательно со слешами).

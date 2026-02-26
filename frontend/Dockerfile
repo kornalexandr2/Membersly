@@ -8,5 +8,5 @@ RUN npm run build
 # Устанавливаем легковесный http-сервер для статики
 RUN npm install -g serve
 
-EXPOSE 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+EXPOSE 6116
+CMD ["serve", "-s", "dist", "-l", "6116"]
