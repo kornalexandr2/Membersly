@@ -4,85 +4,130 @@ import { useEffect, useState } from 'react';
 
 const API_URL = window.location.origin.includes('localhost:5173') ? 'http://localhost:8000' : '/api';
 
-const ManageBots = ({ token }: { token: string }) => {
-    const [bots, setBots] = useState<any[]>([]);
-    const [tok, setTok] = useState('');
-    const fetchBots = () => fetch(`${API_URL}/admin/bots`, { headers: { 'Authorization': `Bearer ${token}` }}).then(res => res.json()).then(data => setBots(Array.isArray(data) ? data : []));
-    useEffect(() => fetchBots(), [token]);
+const ClientZone = () => {
+  const { t } = useTranslation();
+  const [tariffs, setTariffs] = useState<any[]>([]);
+  const [userSubs, setUserSubs] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [tgUser, setTgUser] = useState<any>(null);
+  const [botUsername, setBotUsername] = useState('bot');
 
-    const addBot = (e: any) => {
-        e.preventDefault();
-        fetch(`${API_URL}/admin/bots`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: tok, title: 'Bot' })
-        }).then(() => { setTok(''); fetchBots(); });
-    };
+  const userId = tgUser?.id || 12345;
 
-    const deleteBot = (id: number) => {
-        fetch(`${API_URL}/admin/bots/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }}).then(() => fetchBots());
-    };
+  const fetchData = async () => {
+    const [tRes, sRes, pRes, cRes] = await Promise.all([
+        fetch(`${API_URL}/tariffs`),
+        fetch(`${API_URL}/orders/subscriptions/${userId}`),
+        fetch(`${API_URL}/profile/${userId}`),
+        fetch(`${API_URL}/config`)
+    ]);
+    setTariffs(await tRes.json());
+    setUserSubs(await sRes.json());
+    setProfile(await pRes.json());
+    const config = await cRes.json();
+    setBotUsername(config.bot_username);
+  };
 
-    return (
-        <div className="space-y-6">
-            <form onSubmit={addBot} className="bg-neutral-900 p-6 rounded-3xl border border-white/10 flex gap-2">
-                <input className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-2 text-sm outline-none" placeholder="New Bot Token" value={tok} onChange={e => setTok(e.target.value)} />
-                <button className="bg-blue-600 px-6 py-2 rounded-xl font-bold uppercase text-[10px]">Add Bot</button>
-            </form>
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) { tg.ready(); setTgUser(tg.initDataUnsafe?.user); }
+    fetchData();
+  }, [tgUser?.id]);
+
+  const handlePay = (t_id: number) => {
+    fetch(`${API_URL}/orders/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tariff_id: t_id, user_id: userId, use_balance: true })
+    }).then(res => res.json()).then(data => { if(data.payment_url) window.location.href = data.payment_url; else fetchData(); });
+  };
+
+  const toggleRenew = (s_id: number) => {
+    fetch(`${API_URL}/orders/subscriptions/${s_id}/toggle-renew`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userId)
+    }).then(() => fetchData());
+  };
+
+  return (
+    <div className="p-4 max-w-2xl mx-auto space-y-8">
+      <div className="flex justify-between items-center bg-neutral-900 p-6 rounded-[2rem] border border-white/5 shadow-xl">
+          <div>
+            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1">Your Balance</div>
+            <div className="text-3xl font-black tracking-tighter text-blue-500">{profile?.balance || 0} Ⓜ️</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1">Affiliate Link</div>
+            <div className="text-[10px] font-mono text-neutral-400 bg-white/5 px-2 py-1 rounded-lg">t.me/{botUsername}?start=ref_{userId}</div>
+          </div>
+      </div>
+
+      {userSubs.length > 0 && (
+        <div className="space-y-4">
+            <h2 className="text-xs font-black uppercase tracking-widest text-neutral-500 ml-4">My Subscriptions</h2>
             <div className="grid gap-3">
-                {bots.map(b => (
-                    <div key={b.id} className="p-4 bg-neutral-900 rounded-2xl border border-white/5 flex justify-between items-center">
-                        <div className="truncate max-w-[200px] text-xs font-mono text-neutral-500">{b.token}</div>
-                        <button onClick={() => deleteBot(b.id)} className="text-red-500 font-bold uppercase text-[10px] hover:underline">Revoke</button>
-                    </div>))}
+                {userSubs.map(sub => (
+                    <div key={sub.id} className="bg-neutral-900 p-5 rounded-3xl border border-white/5 flex justify-between items-center">
+                        <div>
+                            <div className="font-bold">{sub.tariff.title}</div>
+                            <div className="text-[10px] text-neutral-500 uppercase">Ends: {new Date(sub.end_date).toLocaleDateString()}</div>
+                        </div>
+                        <button onClick={() => toggleRenew(sub.id)} className={`text-[10px] font-black uppercase px-4 py-2 rounded-xl border ${sub.auto_renew ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-white/5 border-white/10 text-neutral-500'}`}>
+                            {sub.auto_renew ? 'Auto-renew ON' : 'Auto-renew OFF'}
+                        </button>
+                    </div>
+                ))}
             </div>
         </div>
-    );
-};
+      )}
 
-const ManageChannels = ({ token }: { token: string }) => {
-    const [channels, setChannels] = useState<any[]>([]);
-    const [form, setForm] = useState({ chat_id: '', title: '', type: 'channel' });
-    const fetchChannels = () => fetch(`${API_URL}/admin/channels`, { headers: { 'Authorization': `Bearer ${token}` }}).then(res => res.json()).then(data => setChannels(Array.isArray(data) ? data : []));
-    useEffect(() => fetchChannels(), [token]);
-
-    const addChannel = (e: any) => {
-        e.preventDefault();
-        fetch(`${API_URL}/admin/channels?chat_id=${form.chat_id}&title=${form.title}&type=${form.type}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        }).then(() => { setForm({ chat_id: '', title: '', type: 'channel' }); fetchChannels(); });
-    };
-
-    return (
-        <div className="space-y-6">
-            <form onSubmit={addChannel} className="bg-neutral-900 p-6 rounded-3xl border border-white/10 grid grid-cols-2 gap-4">
-                <input placeholder="Chat ID" className="bg-black p-3 rounded-xl text-sm" value={form.chat_id} onChange={e => setForm({...form, chat_id: e.target.value})} />
-                <input placeholder="Title" className="bg-black p-3 rounded-xl text-sm" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                <button className="bg-blue-600 rounded-xl font-bold uppercase text-[10px] col-span-2 py-3">Link Resource</button>
-            </form>
-            <div className="grid gap-3">
-                {channels.map(c => (
-                    <div key={c.id} className="p-4 bg-neutral-900 rounded-2xl border border-white/5 flex justify-between items-center">
-                        <div><div className="font-bold">{c.title}</div><div className="text-[10px] text-neutral-500 italic">ID: {c.telegram_chat_id}</div></div>
-                        <span className="text-[8px] bg-white/10 px-2 py-1 rounded-full font-black uppercase">{c.type}</span>
-                    </div>))}
-            </div>
+      <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+        <h2 className="text-lg font-bold mb-6 uppercase text-blue-500 tracking-tighter flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-blue-500 rounded-full"></span> Upgrade Access
+        </h2>
+        <div className="grid gap-4">
+            {tariffs.map(t_item => (
+              <div key={t_item.id} className="p-6 bg-white/[0.02] rounded-3xl flex justify-between items-center border border-white/5 hover:border-white/10 transition group">
+                  <div className="space-y-1">
+                    <div className="font-black text-xl uppercase tracking-tighter group-hover:text-blue-400 transition">{t_item.title}</div>
+                    <div className="flex gap-1 flex-wrap">
+                        {t_item.channels?.map((c: any) => (
+                            <span key={c.id} className="text-[8px] bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">{c.title}</span>
+                        ))}
+                    </div>
+                  </div>
+                  <button onClick={() => handlePay(t_item.id)} className="bg-white text-black hover:bg-blue-500 hover:text-white px-6 py-3 rounded-2xl font-black text-sm transition-all transform active:scale-90">
+                    {t_item.price} ₽
+                  </button>
+              </div>))}
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-// App navigation & State remains same...
-// Simplified rendering for brevity - keeping logic structure
+// ... Admin Dashboard and App components remain as before ...
 function App() {
+    const { i18n } = useTranslation();
     const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
     return (
         <Router>
             <div className="min-h-screen bg-black text-neutral-100 font-sans">
-                <nav className="p-6 border-b border-white/5 flex justify-between items-center">
-                    <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-neutral-600"><Link to="/">Client</Link><Link to="/admin">Admin</Link></div>
+                <nav className="p-6 border-b border-white/5 flex justify-between items-center px-10">
+                    <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600">
+                        <Link to="/" className="hover:text-white transition">Terminal</Link>
+                        <Link to="/admin" className="hover:text-white transition">Control</Link>
+                    </div>
+                    <div className="flex items-center gap-6">
+                        <div className="flex gap-3">
+                            <button onClick={() => i18n.changeLanguage('ru')} className={`text-[10px] font-bold ${i18n.language === 'ru' ? 'text-blue-500' : 'text-neutral-700'}`}>RU</button>
+                            <button onClick={() => i18n.changeLanguage('en')} className={`text-[10px] font-bold ${i18n.language === 'en' ? 'text-blue-500' : 'text-neutral-700'}`}>EN</button>
+                        </div>
+                        {token && <button onClick={() => { setToken(''); localStorage.removeItem('admin_token'); }} className="text-[10px] font-black uppercase text-red-600/40 hover:text-red-500 transition border border-red-500/10 px-4 py-1.5 rounded-full">System Exit</button>}
+                    </div>
                 </nav>
-                <div className="py-8"><Routes><Route path="/admin" element={<AdminDashboard token={token} />} /></Routes></div>
+                <div className="py-8"><Routes><Route path="/" element={<ClientZone />} /><Route path="/admin" element={<AdminDashboard token={token} />} /><Route path="/login" element={<div>Login Page</div>} /></Routes></div>
             </div>
         </Router>
     );

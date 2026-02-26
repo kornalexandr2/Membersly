@@ -11,6 +11,19 @@ from aiogram import Bot
 
 router = APIRouter(tags=["public"])
 
+from app.models.models import Tariff, User
+
+@router.get("/profile/{user_id}")
+async def get_user_profile(user_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.telegram_id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        # Create user if not exists (fallback for direct web access)
+        user = User(telegram_id=user_id, full_name="User")
+        db.add(user)
+        await db.commit()
+    return user
+
 @router.get("/config")
 async def get_config():
     # Fetch bot username to build referral links

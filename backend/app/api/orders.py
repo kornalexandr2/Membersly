@@ -9,6 +9,27 @@ from app.core.payments import PaymentService
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
+@router.get("/subscriptions/{user_id}")
+async def list_user_subscriptions(user_id: int, db: AsyncSession = Depends(get_db)):
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(Subscription).options(selectinload(Subscription.tariff)).where(Subscription.user_id == user_id)
+    )
+    return result.scalars().all()
+
+@router.post("/subscriptions/{sub_id}/toggle-renew")
+async def toggle_auto_renew(sub_id: int, user_id: int = Body(...), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Subscription).where(Subscription.id == sub_id, Subscription.user_id == user_id)
+    )
+    sub = result.scalar_one_or_none()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    
+    sub.auto_renew = not sub.auto_renew
+    await db.commit()
+    return {"auto_renew": sub.auto_renew}
+
 @router.post("/create")
 async def create_order(tariff_id: int = Body(...), user_id: int = Body(...), coupon_code: str = Body(None), use_balance: bool = Body(False), db: AsyncSession = Depends(get_db)):
     from app.models.models import User
