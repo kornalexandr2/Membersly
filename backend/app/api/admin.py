@@ -33,6 +33,15 @@ class BotCreate(BaseModel):
     token: str
     title: Optional[str] = None
 
+@router.post("/settings/tg-id")
+async def update_admin_tg_id(tg_id: int = Body(...), current_admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    from app.models.models import AdminUser
+    result = await db.execute(select(AdminUser).where(AdminUser.login == current_admin))
+    admin = result.scalar_one()
+    admin.telegram_id = tg_id
+    await db.commit()
+    return {"status": "ok"}
+
 @router.get("/bots")
 async def list_bots(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(BotConfig))

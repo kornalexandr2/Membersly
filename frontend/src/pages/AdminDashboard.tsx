@@ -7,6 +7,7 @@ import { ManageBots } from '../components/admin/ManageBots';
 import { ManageChannels } from '../components/admin/ManageChannels';
 import { ManageBroadcast } from '../components/admin/ManageBroadcast';
 import { ManageCoupons } from '../components/admin/ManageCoupons';
+import { ManageSettings } from '../components/admin/ManageSettings';
 
 export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: string }) => {
     const [view, setView] = useState('stats');
@@ -28,6 +29,8 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
             ]);
             setDataList(await tRes.json());
             setChannels(await cRes.json());
+        } else if (view === 'settings') {
+            // Static view
         } else {
             const res = await fetch(`${apiUrl}/admin/${view}`, { headers });
             setDataList(Array.isArray(await res.json()) ? await res.json() : []);
@@ -48,7 +51,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
                 <div className="text-4xl font-black uppercase italic tracking-tighter text-white">Membersly <span className="text-blue-600">.OS</span></div>
                 <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar shadow-2xl">
-                    {['stats', 'channels', 'tariffs', 'broadcast', 'users', 'coupons', 'bots'].map((v) => (
+                    {['stats', 'channels', 'tariffs', 'broadcast', 'users', 'coupons', 'bots', 'settings'].map((v) => (
                         <button key={v} onClick={() => setView(v)} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-neutral-500 hover:text-white'}`}>{v}</button>
                     ))}
                 </div>
@@ -70,6 +73,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                 {view === 'users' && <ManageUsers data={dataList} onAction={handleAction} />}
                 {view === 'coupons' && <ManageCoupons data={dataList} onAction={handleAction} />}
                 {view === 'bots' && <ManageBots data={dataList} onAction={handleAction} />}
+                {view === 'settings' && <ManageSettings apiUrl={apiUrl} token={token} />}
             </div>
         </div>
     );
