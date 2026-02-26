@@ -34,6 +34,34 @@ async def get_current_admin(token: str = Depends(oauth2_scheme)):
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
+import hmac
+import hashlib
+import json
+from urllib.parse import parse_qsl
+
+def validate_telegram_data(init_data: str, bot_token: str):
+    try:
+        parsed_data = dict(parse_qsl(init_data, strict_parsing=True))
+        if 'hash' not in parsed_data: return None
+        
+        hash_value = parsed_data.pop('hash')
+        data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed_data.items()))
+        
+        secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        
+        if calculated_hash == hash_value:
+            return json.loads(parsed_data['user'])
+    except Exception: pass
+    return None
+
+@router.post("/telegram")
+async def auth_telegram(initData: str = Body(...)):
+    user_data = validate_telegram_data(initData, settings.bot_token)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Invalid Telegram data")
+    return {"status": "ok", "user": user_data}
+
 @router.post("/login")
 async def admin_login(data: AdminLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(AdminUser).where(AdminUser.login == data.login))
