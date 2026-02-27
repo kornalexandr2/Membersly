@@ -25,7 +25,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-membersly}
       - REDIS_URL=redis://redis:6379/0
-      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_TOKEN=${BOT_TOKEN:-PLACEHOLDER_TOKEN}
     ports:
       - "8000:8000"
     depends_on:
@@ -39,7 +39,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-membersly}
       - REDIS_URL=redis://redis:6379/0
-      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_TOKEN=${BOT_TOKEN:-PLACEHOLDER_TOKEN}
     depends_on:
       - db
       - redis
@@ -51,7 +51,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-membersly}
       - REDIS_URL=redis://redis:6379/0
-      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_TOKEN=${BOT_TOKEN:-PLACEHOLDER_TOKEN}
     depends_on:
       - db
       - redis
