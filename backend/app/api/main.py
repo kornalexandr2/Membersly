@@ -26,7 +26,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @app.on_event("startup")
 async def startup_event():
-    # Base.metadata.create_all is removed to prevent conflicts with Alembic
+    # Create tables automatically on startup for ease of deployment
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(AdminUser).limit(1))
