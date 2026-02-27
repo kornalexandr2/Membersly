@@ -6,10 +6,16 @@ export const ManageTariffs = ({ data, channels, onAction }: any) => {
 
     const submit = (e: any) => {
         e.preventDefault();
-        const body = { ...form, price: parseFloat(form.price), duration_days: parseInt(form.duration || 30), channel_ids: form.selectedChannels };
+        const body = { 
+            ...form, 
+            price: parseFloat(form.price), 
+            duration_days: parseInt(form.duration_days || 30), 
+            channel_ids: form.selectedChannels,
+            currency: form.currency || 'RUB' // Default to RUB if not specified
+        };
         if (editing) onAction('PATCH', `tariffs/${editing}`, body);
         else onAction('POST', 'tariffs', body);
-        setForm({ access_level: 'full_access', selectedChannels: [] });
+        setForm({ access_level: 'full_access', selectedChannels: [], currency: 'RUB' });
         setEditing(null);
     };
 
@@ -18,8 +24,10 @@ export const ManageTariffs = ({ data, channels, onAction }: any) => {
             <form onSubmit={submit} className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 space-y-6 shadow-2xl">
                 <h3 className="text-sm font-black uppercase text-blue-500 tracking-[0.2em] italic">{editing ? 'Update Protocol' : 'New Access Strategy'}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input placeholder="NAME" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.title || ''} onChange={e => setForm({...form, title: e.target.value})} />
-                    <input placeholder="PRICE (RUB)" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.price || ''} onChange={e => setForm({...form, price: e.target.value})} />
+                    <input placeholder="NAME" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.title || ''} onChange={e => setForm({...form, title: e.target.value})} required />
+                    <input placeholder="PRICE" type="number" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.price || ''} onChange={e => setForm({...form, price: e.target.value})} required />
+                    <input placeholder="CURRENCY (RUB/XTR)" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.currency || 'RUB'} onChange={e => setForm({...form, currency: e.target.value})} />
+                    <input placeholder="DURATION IN DAYS (30)" type="number" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.duration_days || ''} onChange={e => setForm({...form, duration_days: e.target.value})} />
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {channels.map((c: any) => (
