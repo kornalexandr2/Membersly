@@ -61,8 +61,8 @@ export const ManageChannels = ({ data, onAction }: any) => {
                     <div key={c.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center group">
                         <div>
                             <div className="font-black text-sm uppercase tracking-tighter group-hover:text-blue-400 transition">{c.title}</div>
-                            <div className="text-[10px] text-neutral-500 font-bold mt-1">UUID: {c.telegram_chat_id}</div>
-                            {c.welcome_text && <div className="text-[9px] text-green-500 font-bold uppercase mt-1">Welcome Msg {c.pin_welcome && '(Pinned)'}</div>}
+                            <div className="text-[10px] text-neutral-500 font-bold mt-1">ID: {c.telegram_chat_id}</div>
+                            {c.welcome_text && <div className="text-[9px] text-green-500 font-bold uppercase mt-1">{t('admin.channels_welcome_active')} {c.pin_welcome && `(${t('admin.channels_pinned')})`}</div>}
                         </div>
                         <div className="flex items-center gap-4">
                             <button onClick={() => { setEditing(c.id); setForm(c); }} className="text-white/40 font-black text-[10px] uppercase hover:text-white transition">{t('admin.edit')}</button>

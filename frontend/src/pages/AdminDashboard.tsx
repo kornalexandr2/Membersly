@@ -35,7 +35,8 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
             // Static view
         } else {
             const res = await fetch(`${apiUrl}/admin/${view}`, { headers });
-            setDataList(Array.isArray(await res.json()) ? await res.json() : []);
+            const data = await res.json();
+            setDataList(Array.isArray(data) ? data : []);
         }
     };
 
@@ -44,12 +45,15 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
     const handleAction = async (method: string, endpoint: string, body?: any) => {
         const fetchOptions: any = { method, headers };
         if (body) {
-            // Если body уже строка (как было для broadcast), оставляем как есть, 
-            // но лучше всегда передавать объект для консистентности.
             fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
         }
         const res = await fetch(`${apiUrl}/admin/${endpoint}`, fetchOptions);
-        if (res.ok) fetchData();
+        if (res.ok) {
+            fetchData();
+        } else {
+            const err = await res.json();
+            alert(`Error: ${err.detail || 'Action failed'}`);
+        }
     };
 
     if (!token) return <Navigate to="/login" />;
@@ -57,8 +61,8 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
     return (
         <div className="p-4 max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-                <div className="text-4xl font-black uppercase italic tracking-tighter text-white">Membersly <span className="text-blue-600">.OS</span></div>
-                <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar shadow-2xl">
+                <div className="text-4xl font-black uppercase italic tracking-tighter text-white">MEMBERSLY</div>
+                <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-white/5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] shadow-2xl">
                     {['stats', 'channels', 'tariffs', 'broadcast', 'users', 'coupons', 'bots', 'settings'].map((v) => (
                         <button key={v} onClick={() => setView(v)} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-neutral-500 hover:text-white'}`}>{t(`admin.${v}`)}</button>
                     ))}
