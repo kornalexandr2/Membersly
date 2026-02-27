@@ -125,9 +125,11 @@ async def daily_watchdog(ctx):
     await autorenew_subscriptions(ctx)
     await handle_expired_subscriptions(ctx)
 
+from arq.cron import cron
+
 class WorkerSettings:
     functions = [daily_watchdog]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
-    cron_jobs = [{'function': daily_watchdog, 'minute': set(range(60))}]
+    cron_jobs = [cron(daily_watchdog, minute=set(range(60)))]
