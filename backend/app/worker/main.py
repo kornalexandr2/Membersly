@@ -29,20 +29,25 @@ def _(lang: str, key: str, **kwargs) -> str:
 
 # 2. Worker Lifecycle
 async def startup(ctx):
-    ctx['bot'] = Bot(token=settings.bot_token)
+    if settings.bot_token and settings.bot_token != "PLACEHOLDER_TOKEN":
+        ctx['bot'] = Bot(token=settings.bot_token)
+    else:
+        ctx['bot'] = None
     ctx['session'] = AsyncSessionLocal()
 
 async def shutdown(ctx):
-    await ctx['bot'].session.close()
+    if ctx.get('bot'):
+        await ctx['bot'].session.close()
     await ctx['session'].close()
 
 # 3. Tasks
 async def notify_users(ctx):
     session = ctx['session']
-    bot = ctx['bot']
-    
-    # 24h Notifications
-    tomorrow = datetime.now() + timedelta(days=1)
+    bot = ctx.get('bot')
+    if not bot:
+        return
+
+    # 24h Notifications    tomorrow = datetime.now() + timedelta(days=1)
     res_24 = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= tomorrow, Subscription.end_date > datetime.now()))
     for sub, user in res_24.all():
         try: await bot.send_message(sub.user_id, _(user.language_code, "notify_24h"))
@@ -57,15 +62,16 @@ async def notify_users(ctx):
 
 async def autorenew_subscriptions(ctx):
     session = ctx['session']
+    bot = ctx.get('bot')
     soon = datetime.now() + timedelta(hours=1)
     res = await session.execute(select(Subscription).where(Subscription.is_active == True, Subscription.auto_renew == True, Subscription.payment_method_id.is_not(None), Subscription.end_date <= soon, Subscription.end_date > datetime.now()))
-    
+
     for sub in res.scalars().all():
         t_res = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
         tariff = t_res.scalar_one_or_none()
         u_res = await session.execute(select(User).where(User.telegram_id == sub.user_id))
         user = u_res.scalar_one_or_none()
-        
+
         if tariff and user:
             try:
                 pay = await PaymentService.charge_recurring(amount=float(tariff.price), currency=tariff.currency, payment_method_id=sub.payment_method_id, description=f"Renew: {tariff.title}")
@@ -73,24 +79,27 @@ async def autorenew_subscriptions(ctx):
                     sub.end_date = sub.end_date + timedelta(days=tariff.duration_days)
                     await session.commit()
                     # Notify success
-                    try: await bot.send_message(sub.user_id, _(user.language_code, "renew_success", title=tariff.title))
-                    except Exception: pass
+                    if bot:
+                        try: await bot.send_message(sub.user_id, _(user.language_code, "renew_success", title=tariff.title))
+                        except Exception: pass
                 else:
                     # Notify failure
-                    try: await bot.send_message(sub.user_id, _(user.language_code, "renew_failed"))
-                    except Exception: pass
+                    if bot:
+                        try: await bot.send_message(sub.user_id, _(user.language_code, "renew_failed"))
+                        except Exception: pass
             except Exception: pass
-
 async def handle_expired_subscriptions(ctx):
     session = ctx['session']
-    bot = ctx['bot']
-    grace_limit = datetime.now() - timedelta(hours=24)
+    bot = ctx.get('bot')
     
+    grace_limit = datetime.now() - timedelta(hours=24)
+
     # Final Expire (After Grace)
     res = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= grace_limit))
     for sub, user in res.all():
         sub.is_active = False
         await session.commit()
+        if not bot: continue
         t_res = await session.execute(select(Tariff).where(Tariff.id == sub.tariff_id))
         tariff = t_res.scalar_one_or_none()
         if tariff:
@@ -105,12 +114,12 @@ async def handle_expired_subscriptions(ctx):
                     await bot.send_message(sub.user_id, _(user.language_code, "access_revoked", title=channel.title))
                 except Exception: pass
 
-    # Notify Grace Period
-    just_expired = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= datetime.now(), Subscription.end_date > grace_limit))
-    for sub, user in just_expired.all():
-        try: await bot.send_message(sub.user_id, _(user.language_code, "grace_period_start"))
-        except Exception: pass
-
+    if bot:
+        # Notify Grace Period
+        just_expired = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= datetime.now(), Subscription.end_date > grace_limit))
+        for sub, user in just_expired.all():
+            try: await bot.send_message(sub.user_id, _(user.language_code, "grace_period_start"))
+            except Exception: pass
 async def daily_watchdog(ctx):
     await notify_users(ctx)
     await autorenew_subscriptions(ctx)
