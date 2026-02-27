@@ -71,6 +71,7 @@
     "bots_authorize": "Авторизовать",
     "bots_deauthorize": "Удалить",
     "bots_active_signal": "Активный токен",
+    "bots_empty": "Список ботов пуст. Авторизуйте своего первого бота выше.",
     "users_mod_bal": "Изм. Баланс",
     "users_bal_prompt": "Введите новую сумму баланса:",
     "users_search": "Поиск пользователя (Имя / ID)...",

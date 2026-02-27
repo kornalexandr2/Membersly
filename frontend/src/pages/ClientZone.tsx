@@ -81,14 +81,14 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
       {/* Profile and Balance Section ... */}
-      <div className="flex justify-between items-center bg-neutral-900 p-6 rounded-[2.5rem] border border-white/5 shadow-2xl">
+      <div className="flex justify-between items-center bg-neutral-900 p-8 rounded-[3rem] border border-white/10 shadow-2xl">
           <div>
-            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1 tracking-widest">{t('client_balance')}</div>
-            <div className={`text-4xl font-black tracking-tighter ${profile?.balance > 0 ? 'text-blue-500' : 'text-neutral-700'}`}>{profile?.balance || 0} Ⓜ️</div>
+            <div className="text-xs font-black uppercase text-neutral-400 mb-2 tracking-widest">{t('client_balance')}</div>
+            <div className={`text-5xl font-black tracking-tighter ${profile?.balance > 0 ? 'text-blue-500' : 'text-neutral-700'}`}>{profile?.balance || 0} Ⓜ️</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1">{t('client_ref_link')}</div>
-            <div className="text-[10px] font-mono text-blue-400">t.me/{botUsername}?start=ref_{tgUser?.id || profile?.telegram_id || 'ERROR'}</div>
+            <div className="text-xs font-black uppercase text-neutral-400 mb-2 tracking-widest">{t('client_ref_link')}</div>
+            <div className="text-xs font-mono text-blue-400 bg-black/50 px-4 py-2 rounded-xl border border-white/5">t.me/{botUsername}?start=ref_{tgUser?.id || profile?.telegram_id || 'ERROR'}</div>
           </div>
       </div>
 
@@ -102,8 +102,8 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
       </div>
 
       {userSubs.length > 0 && (
-        <div className="space-y-4">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 ml-6 italic">{t('client_active_protocols')}</h2>
+        <div className="space-y-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-neutral-400 ml-8 italic border-l-4 border-blue-600 pl-4">{t('client_active_protocols')}</h2>
             <div className="grid gap-4">
                 {userSubs.map(sub => (
                     <div key={sub.id} className="bg-neutral-900 p-6 rounded-[2rem] border border-white/5 space-y-6 shadow-xl">

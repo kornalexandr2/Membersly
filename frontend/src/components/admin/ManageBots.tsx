@@ -11,6 +11,11 @@ export const ManageBots = ({ data, onAction }: any) => {
                 <button onClick={() => { if(token) { onAction('POST', 'bots', {token, title: 'Bot'}); setToken(''); } }} className="bg-blue-600 px-8 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all">{t('admin.add_bot')}</button>
             </div>
             <div className="grid gap-3">
+                {data.length === 0 && (
+                    <div className="text-center p-12 bg-neutral-900/50 rounded-[2rem] border border-white/5 text-neutral-600 font-black uppercase text-[10px] tracking-widest italic animate-pulse">
+                        {t('admin.bots_empty')}
+                    </div>
+                )}
                 {data.map((b: any) => (
                     <div key={b.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center hover:bg-white/[0.01] transition-all group">
                         <div className="truncate pr-8">

@@ -14,17 +14,17 @@ function App() {
     return (
         <Router>
             <div className="min-h-screen bg-black text-neutral-100 font-sans selection:bg-blue-500/30">
-                <nav className="p-6 border-b border-white/5 flex justify-between items-center px-10">
-                    <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600">
-                        <Link to="/" className="hover:text-white transition">{t('nav_terminal')}</Link>
-                        <Link to="/admin" className="hover:text-white transition">{t('nav_control')}</Link>
+                <nav className="p-10 border-b border-white/10 flex justify-between items-center px-16 bg-neutral-900/80 backdrop-blur-xl sticky top-0 z-50 shadow-2xl">
+                    <div className="flex gap-16 text-sm font-black uppercase tracking-[0.5em] text-neutral-300">
+                        <Link to="/" className="hover:text-blue-400 transition-all duration-300 hover:scale-105 active:scale-95">{t('nav_terminal')}</Link>
+                        <Link to="/admin" className="hover:text-blue-400 transition-all duration-300 hover:scale-105 active:scale-95">{t('nav_control')}</Link>
                     </div>
-                    <div className="flex items-center gap-6">
-                        <div className="flex gap-3 text-[10px] font-black uppercase">
-                            <button onClick={() => i18n.changeLanguage('ru')} className={i18n.language === 'ru' ? 'text-blue-500' : 'text-neutral-700'}>RU</button>
-                            <button onClick={() => i18n.changeLanguage('en')} className={i18n.language === 'en' ? 'text-blue-500' : 'text-neutral-700'}>EN</button>
+                    <div className="flex items-center gap-10">
+                        <div className="flex gap-6 text-sm font-black uppercase tracking-widest">
+                            <button onClick={() => i18n.changeLanguage('ru')} className={`transition-all duration-300 px-3 py-1.5 rounded-lg border ${i18n.language === 'ru' ? 'text-blue-500 bg-blue-500/10 border-blue-500/20 scale-110' : 'text-neutral-400 border-transparent hover:text-white hover:border-white/10'}`}>RU</button>
+                            <button onClick={() => i18n.changeLanguage('en')} className={`transition-all duration-300 px-3 py-1.5 rounded-lg border ${i18n.language === 'en' ? 'text-blue-500 bg-blue-500/10 border-blue-500/20 scale-110' : 'text-neutral-400 border-transparent hover:text-white hover:border-white/10'}`}>EN</button>
                         </div>
-                        {token && <button onClick={() => { setToken(''); localStorage.removeItem('admin_token'); }} className="text-[10px] font-black uppercase text-red-600/40 hover:text-red-500 transition border border-red-500/10 px-4 py-1.5 rounded-full">{t('nav_exit')}</button>}
+                        {token && <button onClick={() => { setToken(''); localStorage.removeItem('admin_token'); }} className="text-xs font-black uppercase text-red-500 hover:text-white hover:bg-red-600 transition-all duration-300 border-2 border-red-500/30 px-8 py-2.5 rounded-full bg-red-500/5 active:scale-90">{t('nav_exit')}</button>}
                     </div>
                 </nav>
                 <div className="py-8">
