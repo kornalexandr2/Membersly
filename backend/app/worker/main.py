@@ -47,7 +47,8 @@ async def notify_users(ctx):
     if not bot:
         return
 
-    # 24h Notifications    tomorrow = datetime.now() + timedelta(days=1)
+    # 24h Notifications
+    tomorrow = datetime.now() + timedelta(days=1)
     res_24 = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= tomorrow, Subscription.end_date > datetime.now()))
     for sub, user in res_24.all():
         try: await bot.send_message(sub.user_id, _(user.language_code, "notify_24h"))
