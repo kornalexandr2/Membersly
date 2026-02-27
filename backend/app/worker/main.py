@@ -12,6 +12,12 @@ import asyncio
 import json
 import os
 
+# Python 3.12+ compatibility patch for arq
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 # 1. Locales Engine
 LOCALES = {}
 locales_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "locales")
