@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { StatCard } from '../components/StatCard';
 import { ManageTariffs } from '../components/admin/ManageTariffs';
 import { ManageUsers } from '../components/admin/ManageUsers';
@@ -10,6 +11,7 @@ import { ManageCoupons } from '../components/admin/ManageCoupons';
 import { ManageSettings } from '../components/admin/ManageSettings';
 
 export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: string }) => {
+    const { t } = useTranslation();
     const [view, setView] = useState('stats');
     const [stats, setStats] = useState<any>({ active_subscriptions: 0, total_revenue: 0, new_users_today: 0, monthly_revenue: 0 });
     const [dataList, setDataList] = useState<any[]>([]);
@@ -58,7 +60,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
                 <div className="text-4xl font-black uppercase italic tracking-tighter text-white">Membersly <span className="text-blue-600">.OS</span></div>
                 <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar shadow-2xl">
                     {['stats', 'channels', 'tariffs', 'broadcast', 'users', 'coupons', 'bots', 'settings'].map((v) => (
-                        <button key={v} onClick={() => setView(v)} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-neutral-500 hover:text-white'}`}>{v}</button>
+                        <button key={v} onClick={() => setView(v)} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-neutral-500 hover:text-white'}`}>{t(`admin.${v}`)}</button>
                     ))}
                 </div>
             </div>
@@ -66,10 +68,10 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
             <div className="min-h-[60vh]">
                 {view === 'stats' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-bottom-4 duration-500">
-                        <StatCard label="Total Nodes" value={stats.active_subscriptions} />
-                        <StatCard label="Total Capital" value={`${stats.total_revenue} ₽`} color="text-green-500" />
-                        <StatCard label="30D Momentum" value={`${stats.monthly_revenue} ₽`} color="text-blue-400" />
-                        <StatCard label="System Growth" value={stats.new_users_today} />
+                        <StatCard label={t('admin.stats_nodes')} value={stats.active_subscriptions} />
+                        <StatCard label={t('admin.stats_capital')} value={`${stats.total_revenue} ₽`} color="text-green-500" />
+                        <StatCard label={t('admin.stats_momentum')} value={`${stats.monthly_revenue} ₽`} color="text-blue-400" />
+                        <StatCard label={t('admin.stats_growth')} value={stats.new_users_today} />
                     </div>
                 )}
 
