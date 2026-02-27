@@ -8,7 +8,7 @@ import { AdminDashboard } from './pages/AdminDashboard'; // To be created next
 export const API_URL = window.location.origin.includes('localhost') && window.location.port !== '6116' ? 'http://localhost:8000' : '/api';
 
 function App() {
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
 
     return (
