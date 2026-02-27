@@ -78,7 +78,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
 
             <div className="min-h-[60vh]">
                 {view === 'stats' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 animate-in slide-in-from-bottom-4 duration-500">
                         <StatCard label={t('admin.stats_nodes')} value={stats.active_subscriptions} />
                         <StatCard label={t('admin.stats_capital')} value={`${stats.total_revenue} ₽`} color="text-green-500" />
                         <StatCard label={t('admin.stats_momentum')} value={`${stats.monthly_revenue} ₽`} color="text-blue-400" />

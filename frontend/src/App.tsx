@@ -2,8 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { LoginPage } from './pages/Login';
-import { ClientZone } from './pages/ClientZone'; // To be created next
-import { AdminDashboard } from './pages/AdminDashboard'; // To be created next
+import { ClientZone } from './pages/ClientZone';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 export const API_URL = window.location.origin.includes('localhost') && window.location.port !== '6116' ? 'http://localhost:8000' : '/api';
 
