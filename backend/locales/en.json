@@ -1,11 +1,17 @@
 {
-    "welcome_message": "Welcome, {name}!
-I am the subscription management bot.",
+    "welcome_message": "Welcome, {name}!\nI am the subscription management bot.",
     "btn_web_app": "🌐 Open App",
     "btn_my_subscriptions": "📦 My Subscriptions",
+    "no_active_subscriptions": "You have no active subscriptions.",
+    "active_subscriptions_list": "📋 Your active subscriptions:",
     "btn_support": "🆘 Support",
+    "btn_balance": "💰 My Balance",
+    "balance_info": "👤 Your profile:\n\nID: {id}\nBalance: {balance} Ⓜ️\n\nInvite friends and get 5% of their payments in Ⓜ️!",
+    "coupon_activated": "🎟 You activated promo code: {coupon}",
     "notify_24h": "⚠️ Your subscription expires in 24 hours. Please renew to keep your access.",
     "notify_3d": "ℹ️ Reminder: your subscription expires in 3 days.",
     "grace_period_start": "⚠️ Your subscription has expired. You have a 24-hour Grace Period to pay before access is restricted.",
-    "access_revoked": "❌ Your subscription to {title} and the grace period have expired. Access is now restricted."
+    "access_revoked": "❌ Your subscription to {title} and the grace period have expired. Access is now restricted.",
+    "renew_success": "✅ Your subscription {title} has been successfully renewed!",
+    "renew_failed": "❌ Failed to automatically renew your subscription. Please check your card balance or pay manually in the app. You have a Grace Period (24h)."
 }
