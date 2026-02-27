@@ -1,4 +1,4 @@
-from aiogram import Router, types
+from aiogram import Router, types, F
 from aiogram.filters import CommandStart, Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -98,7 +98,7 @@ async def my_subscriptions_handler(callback: types.CallbackQuery, i18n: callable
 async def pre_checkout_query_handler(pre_checkout_query: types.PreCheckoutQuery):
     await pre_checkout_query.answer(ok=True)
 
-@router.message(types.Message.successful_payment)
+@router.message(F.successful_payment)
 async def successful_payment_handler(message: types.Message):
     payload = message.successful_payment.invoice_payload
     tariff_id = int(payload)
