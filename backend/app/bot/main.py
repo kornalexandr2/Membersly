@@ -27,14 +27,20 @@ async def main():
         bot_configs = result.scalars().all()
 
     bots = []
+    added_tokens = set()
+    
     # Add default bot from env if present
     if settings.bot_token and settings.bot_token != "PLACEHOLDER_TOKEN":
         bots.append(Bot(token=settings.bot_token))
+        added_tokens.add(settings.bot_token)
 
     # Add bots from DB
     for config in bot_configs:
+        if config.token in added_tokens:
+            continue
         try:
             bots.append(Bot(token=config.token))
+            added_tokens.add(config.token)
         except Exception as e:
             logging.error(f"Failed to init bot with token {config.token[:10]}...: {e}")
 
