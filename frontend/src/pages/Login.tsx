@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const LoginPage = ({ setToken, apiUrl }: { setToken: (t: string) => void, apiUrl: string }) => {
     const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,12 +28,12 @@ export const LoginPage = ({ setToken, apiUrl }: { setToken: (t: string) => void,
     return (
         <div className="flex items-center justify-center min-h-[70vh]">
             <form onSubmit={handleLogin} className="bg-neutral-900 p-10 rounded-[3rem] border border-white/10 w-full max-w-sm space-y-6 shadow-2xl">
-                <h2 className="text-3xl font-black text-center uppercase tracking-tighter italic">Admin <span className="text-blue-600">Access</span></h2>
+                <h2 className="text-3xl font-black text-center uppercase tracking-tighter italic">{t('login_title')} <span className="text-blue-600">{t('login_subtitle')}</span></h2>
                 <div className="space-y-3">
-                    <input className="w-full bg-black border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-blue-500 transition-all text-sm" placeholder="Login ID" value={login} onChange={e => setLogin(e.target.value)} />
-                    <input className="w-full bg-black border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-blue-500 transition-all text-sm" type="password" placeholder="Passcode" value={password} onChange={e => setPassword(e.target.value)} />
+                    <input className="w-full bg-black border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-blue-500 transition-all text-sm" placeholder={t('login_id')} value={login} onChange={e => setLogin(e.target.value)} />
+                    <input className="w-full bg-black border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-blue-500 transition-all text-sm" type="password" placeholder={t('login_pass')} value={password} onChange={e => setPassword(e.target.value)} />
                 </div>
-                <button className="w-full bg-blue-600 py-5 rounded-3xl font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20">Unlock Terminal</button>
+                <button className="w-full bg-blue-600 py-5 rounded-3xl font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20">{t('login_btn')}</button>
             </form>
         </div>
     );

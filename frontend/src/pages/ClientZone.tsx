@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
+  const { t } = useTranslation();
   const [tariffs, setTariffs] = useState<any[]>([]);
   const [userSubs, setUserSubs] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -81,11 +83,11 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
       {/* Profile and Balance Section ... */}
       <div className="flex justify-between items-center bg-neutral-900 p-6 rounded-[2.5rem] border border-white/5 shadow-2xl">
           <div>
-            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1 tracking-widest">Global Balance</div>
+            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1 tracking-widest">{t('client_balance')}</div>
             <div className={`text-4xl font-black tracking-tighter ${profile?.balance > 0 ? 'text-blue-500' : 'text-neutral-700'}`}>{profile?.balance || 0} Ⓜ️</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1">Referral Link</div>
+            <div className="text-[10px] font-black uppercase text-neutral-500 mb-1">{t('client_ref_link')}</div>
             <div className="text-[10px] font-mono text-blue-400">t.me/{botUsername}?start=ref_{tgUser?.id || profile?.telegram_id || 'ERROR'}</div>
           </div>
       </div>
@@ -93,7 +95,7 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
       <div className="px-2">
           <input 
             className="w-full bg-neutral-900 border border-white/5 rounded-2xl px-6 py-4 text-xs font-black tracking-widest focus:border-blue-500 outline-none transition-all shadow-inner text-white"
-            placeholder="PROMO CODE"
+            placeholder={t('client_promo_placeholder')}
             value={coupon}
             onChange={(e) => setCoupon(e.target.value.toUpperCase())}
           />
@@ -101,27 +103,27 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
 
       {userSubs.length > 0 && (
         <div className="space-y-4">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 ml-6 italic">Active Protocols</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 ml-6 italic">{t('client_active_protocols')}</h2>
             <div className="grid gap-4">
                 {userSubs.map(sub => (
                     <div key={sub.id} className="bg-neutral-900 p-6 rounded-[2rem] border border-white/5 space-y-6 shadow-xl">
                         <div className="flex justify-between items-start">
                             <div>
-                                <div className="font-black uppercase tracking-tight text-lg">{sub.tariff?.title || 'Protocol'}</div>
-                                <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">EXPIRES: {new Date(sub.end_date).toLocaleDateString()}</div>
+                                <div className="font-black uppercase tracking-tight text-lg">{sub.tariff?.title || t('client_protocol')}</div>
+                                <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{t('client_expires')}: {new Date(sub.end_date).toLocaleDateString()}</div>
                             </div>
                             <button onClick={() => toggleRenew(sub.id)} className={`text-[8px] font-black uppercase px-4 py-2 rounded-xl border transition-all ${sub.auto_renew ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-neutral-600'}`}>
-                                {sub.auto_renew ? 'Renew ON' : 'Renew OFF'}
+                                {sub.auto_renew ? t('client_renew_on') : t('client_renew_off')}
                             </button>
                         </div>
                         
                         <div className="space-y-2">
-                            <p className="text-[9px] font-black text-neutral-600 uppercase tracking-widest ml-2">Assigned Resources</p>
+                            <p className="text-[9px] font-black text-neutral-600 uppercase tracking-widest ml-2">{t('client_assigned_resources')}</p>
                             <div className="grid grid-cols-1 gap-2">
                                 {sub.tariff?.channels?.map((c: any) => (
                                     <button key={c.id} onClick={() => getAccess(sub.id, c.id)} className="w-full bg-white/[0.03] hover:bg-blue-600 text-white p-4 rounded-2xl flex justify-between items-center group transition-all border border-white/5">
-                                        <span className="font-bold text-sm uppercase tracking-tighter">Enter {c.title}</span>
-                                        <span className="text-[10px] font-black uppercase opacity-40 group-hover:opacity-100">Access Link →</span>
+                                        <span className="font-bold text-sm uppercase tracking-tighter">{t('client_enter')} {c.title}</span>
+                                        <span className="text-[10px] font-black uppercase opacity-40 group-hover:opacity-100">{t('client_access_link')}</span>
                                     </button>
                                 ))}
                             </div>
@@ -134,7 +136,7 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
 
       <div className="bg-neutral-900 p-8 rounded-[3.5rem] border border-white/5 shadow-2xl">
         <h2 className="text-xl font-black mb-8 uppercase text-white tracking-tighter italic flex items-center gap-3">
-            <span className="w-8 h-[2px] bg-blue-600"></span> Upgrade Access
+            <span className="w-8 h-[2px] bg-blue-600"></span> {t('client_upgrade')}
         </h2>
         <div className="grid gap-4">
             {tariffs.map(t_item => (
