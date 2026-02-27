@@ -37,6 +37,16 @@
     "create_tariff": "Create tariff",
     "create_coupon": "Create coupon",
     "send": "Send",
-    "delete": "Delete"
+    "delete": "Delete",
+    "edit": "Edit",
+    "days": "Days",
+    "tariffs_new_title": "New Access Strategy",
+    "tariffs_edit_title": "Update Protocol",
+    "tariffs_name": "NAME",
+    "tariffs_price": "PRICE",
+    "tariffs_currency": "CURRENCY (RUB/XTR)",
+    "tariffs_duration": "DURATION IN DAYS (30)",
+    "tariffs_create_btn": "Initialize Protocol",
+    "tariffs_update_btn": "Push Update"
   }
 }

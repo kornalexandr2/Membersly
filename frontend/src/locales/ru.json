@@ -37,6 +37,16 @@
     "create_tariff": "Создать тариф",
     "create_coupon": "Создать купон",
     "send": "Отправить",
-    "delete": "Удалить"
+    "delete": "Удалить",
+    "edit": "Ред",
+    "days": "Дней",
+    "tariffs_new_title": "Новый тарифный план",
+    "tariffs_edit_title": "Редактирование тарифа",
+    "tariffs_name": "НАЗВАНИЕ ТАРИФА",
+    "tariffs_price": "ЦЕНА",
+    "tariffs_currency": "ВАЛЮТА (RUB/XTR)",
+    "tariffs_duration": "ДЛИТЕЛЬНОСТЬ В ДНЯХ (30)",
+    "tariffs_create_btn": "Создать тариф",
+    "tariffs_update_btn": "Сохранить изменения"
   }
 }
