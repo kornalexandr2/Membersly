@@ -59,13 +59,13 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
     if (!token) return <Navigate to="/login" />;
 
     return (
-        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-10 md:space-y-16 animate-in fade-in duration-700 overflow-x-hidden">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-10 md:space-y-16 animate-in fade-in duration-700 overflow-x-hidden">
             <div className="flex flex-col items-center gap-6 md:gap-10 text-center">
                 <div className="text-4xl sm:text-5xl md:text-6xl font-black uppercase italic tracking-tighter text-white drop-shadow-[0_0_30px_rgba(59,130,246,0.2)] break-words">MEMBERSLY</div>
-                <div className="w-full overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-                    <div className="flex bg-neutral-900 p-2 md:p-2.5 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl w-max mx-auto">
+                <div className="w-full overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 flex justify-start lg:justify-center">
+                    <div className="flex lg:flex-wrap bg-neutral-900 p-2 md:p-2.5 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl w-max lg:w-auto gap-2">
                         {['stats', 'channels', 'tariffs', 'broadcast', 'users', 'coupons', 'bots', 'settings'].map((v) => (
-                            <button key={v} onClick={() => setView(v)} className={`px-5 sm:px-6 md:px-10 py-2.5 sm:py-3 md:py-4 rounded-[1.5rem] md:rounded-[2rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase transition-all duration-300 whitespace-nowrap ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/40 scale-105 z-10' : 'text-neutral-300 hover:text-white hover:bg-white/5'}`}>{t(`admin.${v}`)}</button>
+                            <button key={v} onClick={() => setView(v)} className={`px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-[1.5rem] md:rounded-[2rem] text-[9px] sm:text-[10px] md:text-xs font-black uppercase transition-all duration-300 whitespace-nowrap ${view === v ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/40 scale-105 z-10' : 'text-neutral-300 hover:text-white hover:bg-white/5'}`}>{t(`admin.${v}`)}</button>
                         ))}
                     </div>
                 </div>
