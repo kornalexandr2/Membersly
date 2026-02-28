@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     yookassa_shop_id: Optional[str] = "PLACEHOLDER_SHOP_ID"
     yookassa_secret_key: Optional[str] = "PLACEHOLDER_SECRET_KEY"
     secret_key: str = "super-secret-key-change-me-in-production"
+    web_app_url: str = "https://your-domain.com"
+    support_url: str = "https://t.me/your_support_username"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

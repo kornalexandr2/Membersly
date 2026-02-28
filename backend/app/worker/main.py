@@ -11,6 +11,10 @@ from decimal import Decimal
 import asyncio
 import json
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Python 3.12+ compatibility patch for arq
 try:
@@ -58,14 +62,14 @@ async def notify_users(ctx):
     res_24 = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= tomorrow, Subscription.end_date > datetime.now()))
     for sub, user in res_24.all():
         try: await bot.send_message(sub.user_id, _(user.language_code, "notify_24h"))
-        except Exception: pass
+        except Exception as e: logger.error(f"Worker error: {e}")
 
     # 3d Notifications
     three_days = datetime.now() + timedelta(days=3)
     res_72 = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= three_days, Subscription.end_date > three_days - timedelta(minutes=10)))
     for sub, user in res_72.all():
         try: await bot.send_message(sub.user_id, _(user.language_code, "notify_3d"))
-        except Exception: pass
+        except Exception as e: logger.error(f"Worker error: {e}")
 
 async def autorenew_subscriptions(ctx):
     session = ctx['session']
@@ -88,13 +92,13 @@ async def autorenew_subscriptions(ctx):
                     # Notify success
                     if bot:
                         try: await bot.send_message(sub.user_id, _(user.language_code, "renew_success", title=tariff.title))
-                        except Exception: pass
+                        except Exception as e: logger.error(f"Worker error: {e}")
                 else:
                     # Notify failure
                     if bot:
                         try: await bot.send_message(sub.user_id, _(user.language_code, "renew_failed"))
-                        except Exception: pass
-            except Exception: pass
+                        except Exception as e: logger.error(f"Worker error: {e}")
+            except Exception as e: logger.error(f"Worker error: {e}")
 async def handle_expired_subscriptions(ctx):
     session = ctx['session']
     bot = ctx.get('bot')
@@ -119,14 +123,14 @@ async def handle_expired_subscriptions(ctx):
                         from aiogram.types import ChatPermissions
                         await bot.restrict_chat_member(chat_id=channel.telegram_chat_id, user_id=sub.user_id, permissions=ChatPermissions(can_send_messages=False))
                     await bot.send_message(sub.user_id, _(user.language_code, "access_revoked", title=channel.title))
-                except Exception: pass
+                except Exception as e: logger.error(f"Worker error: {e}")
 
     if bot:
         # Notify Grace Period
         just_expired = await session.execute(select(Subscription, User).join(User).where(Subscription.is_active == True, Subscription.end_date <= datetime.now(), Subscription.end_date > grace_limit))
         for sub, user in just_expired.all():
             try: await bot.send_message(sub.user_id, _(user.language_code, "grace_period_start"))
-            except Exception: pass
+            except Exception as e: logger.error(f"Worker error: {e}")
 async def daily_watchdog(ctx):
     await notify_users(ctx)
     await autorenew_subscriptions(ctx)
