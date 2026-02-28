@@ -166,12 +166,12 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
               <div className="grid gap-6">
                   {userSubs.map(sub => (
                       <div key={sub.id} className="bg-neutral-900 p-10 rounded-[3rem] border border-white/10 space-y-8 shadow-2xl">
-                          <div className="flex justify-between items-start">
+                          <div className="flex flex-col md:flex-row justify-between items-start gap-4 md:gap-0">
                               <div>
                                   <div className="font-black uppercase tracking-tight text-2xl">{sub.tariff?.title || t('client_protocol')}</div>
                                   <div className="text-xs text-neutral-500 font-bold uppercase tracking-widest mt-1">{t('client_expires')}: {new Date(sub.end_date).toLocaleDateString()}</div>
                               </div>
-                              <button onClick={() => toggleRenew(sub.id)} className={`text-[10px] font-black uppercase px-6 py-3 rounded-2xl border transition-all ${sub.auto_renew ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 border-white/10 text-neutral-600'}`}>
+                              <button onClick={() => toggleRenew(sub.id)} className={`w-full md:w-auto text-[10px] font-black uppercase px-6 py-3 rounded-2xl border transition-all ${sub.auto_renew ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 border-white/10 text-neutral-600'}`}>
                                   {sub.auto_renew ? t('client_renew_on') : t('client_renew_off')}
                               </button>
                           </div>

@@ -31,10 +31,10 @@ export const ManageChannels = ({ data, onAction }: any) => {
             <form onSubmit={submit} className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 space-y-4 shadow-xl">
                 <h3 className="text-sm font-black uppercase text-blue-500 tracking-[0.2em] italic">{editing ? t('admin.channels_edit_title') : t('admin.channels_new_title')}</h3>
                 <div className="flex flex-wrap gap-4">
-                    <input disabled={!!editing} placeholder={t('admin.channels_chat_id')} className="bg-black p-4 rounded-2xl flex-1 min-w-[200px] text-xs font-bold border border-white/5 outline-none focus:border-blue-500" value={form.chat_id || ''} onChange={e => setForm({...form, chat_id: e.target.value})} />
-                    <input placeholder={t('admin.channels_title')} className="bg-black p-4 rounded-2xl flex-1 min-w-[200px] text-xs font-bold border border-white/5 outline-none focus:border-blue-500" value={form.title || ''} onChange={e => setForm({...form, title: e.target.value})} />
+                    <input disabled={!!editing} placeholder={t('admin.channels_chat_id')} className="bg-black p-4 rounded-2xl flex-1 min-w-full md:min-w-[200px] text-xs font-bold border border-white/5 outline-none focus:border-blue-500" value={form.chat_id || ''} onChange={e => setForm({...form, chat_id: e.target.value})} />
+                    <input placeholder={t('admin.channels_title')} className="bg-black p-4 rounded-2xl flex-1 min-w-full md:min-w-[200px] text-xs font-bold border border-white/5 outline-none focus:border-blue-500" value={form.title || ''} onChange={e => setForm({...form, title: e.target.value})} />
                     {!editing && (
-                        <select className="bg-black p-4 rounded-2xl text-[10px] font-black uppercase border border-white/5 text-neutral-400" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+                        <select className="bg-black p-4 rounded-2xl text-[10px] font-black flex-1 min-w-full md:min-w-[150px] uppercase border border-white/5 text-neutral-400" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
                             <option value="channel">{t('admin.channels_type_channel')}</option>
                             <option value="supergroup">{t('admin.channels_type_group')}</option>
                         </select>
@@ -60,7 +60,10 @@ export const ManageChannels = ({ data, onAction }: any) => {
                 {data.map((c: any) => (
                     <div key={c.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center group">
                         <div>
-                            <div className="font-black text-sm uppercase tracking-tighter group-hover:text-blue-400 transition">{c.title}</div>
+                            <div className="flex items-center gap-2">
+                                <div className="font-black text-sm uppercase tracking-tighter group-hover:text-blue-400 transition">{c.title}</div>
+                                <span className="bg-white/10 px-2 py-0.5 rounded-md text-[8px] uppercase font-black text-neutral-400">{c.type}</span>
+                            </div>
                             <div className="text-[10px] text-neutral-500 font-bold mt-1">ID: {c.telegram_chat_id}</div>
                             {c.welcome_text && <div className="text-[9px] text-green-500 font-bold uppercase mt-1">{t('admin.channels_welcome_active')} {c.pin_welcome && `(${t('admin.channels_pinned')})`}</div>}
                         </div>

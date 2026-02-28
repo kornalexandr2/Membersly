@@ -6,9 +6,9 @@ export const ManageBots = ({ data, onAction }: any) => {
     const [token, setToken] = useState('');
     return (
         <div className="space-y-6 animate-in fade-in">
-            <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 flex gap-4 shadow-xl">
+            <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row gap-4 shadow-xl">
                 <input placeholder={t('admin.bots_token_placeholder')} className="bg-black p-4 rounded-2xl flex-1 text-xs font-bold border border-white/5 outline-none focus:border-blue-500 transition-all" value={token} onChange={e => setToken(e.target.value)} />
-                <button onClick={() => { if(token) { onAction('POST', 'bots', {token, title: 'Bot'}); setToken(''); } }} className="bg-blue-600 px-8 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all">{t('admin.add_bot')}</button>
+                <button onClick={() => { if(token) { onAction('POST', 'bots', {token, title: 'Bot'}); setToken(''); } }} className="bg-blue-600 px-8 py-4 md:py-0 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all">{t('admin.add_bot')}</button>
             </div>
             <div className="grid gap-3">
                 {data.length === 0 && (

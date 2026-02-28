@@ -6,9 +6,9 @@ export const ManageCoupons = ({ data, onAction }: any) => {
     const [form, setForm] = useState<any>({});
     return (
         <div className="space-y-6 animate-in fade-in">
-            <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 flex flex-wrap gap-4 shadow-xl">
-                <input placeholder={t('admin.coupons_code')} className="bg-black p-4 rounded-2xl flex-1 min-w-[150px] text-xs font-bold border border-white/5 outline-none focus:border-blue-500" onChange={e => setForm({...form, code: e.target.value})} />
-                <input placeholder={t('admin.coupons_value')} className="bg-black p-4 rounded-2xl w-24 text-xs font-bold border border-white/5 outline-none focus:border-blue-500" onChange={e => setForm({...form, val: e.target.value})} />
+            <div className="bg-neutral-900 p-8 rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row gap-4 shadow-xl">
+                <input placeholder={t('admin.coupons_code')} className="bg-black p-4 rounded-2xl flex-1 text-xs font-bold border border-white/5 outline-none focus:border-blue-500" onChange={e => setForm({...form, code: e.target.value})} />
+                <input placeholder={t('admin.coupons_value')} className="bg-black p-4 rounded-2xl flex-1 md:w-24 text-xs font-bold border border-white/5 outline-none focus:border-blue-500" onChange={e => setForm({...form, val: e.target.value})} />
                 <button onClick={() => onAction('POST', 'coupons', {code: form.code, value: parseFloat(form.val), discount_type: 'fixed', usage_limit: 100})} className="bg-blue-600 px-8 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:bg-blue-500">{t('admin.coupons_generate')}</button>
             </div>
             <div className="grid gap-3">
