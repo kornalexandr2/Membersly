@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 export const ManageTariffs = ({ data, channels, onAction }: any) => {
     const { t } = useTranslation();
-    const [form, setForm] = useState<any>({ access_level: 'full_access', selectedChannels: [] });
+    const [form, setForm] = useState<any>({ access_level: 'full_access', selectedChannels: [], currency: 'RUB' });
     const [editing, setEditing] = useState<number | null>(null);
 
     const submit = (e: any) => {
@@ -28,7 +28,7 @@ export const ManageTariffs = ({ data, channels, onAction }: any) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input placeholder={t('admin.tariffs_name')} className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.title || ''} onChange={e => setForm({...form, title: e.target.value})} required />
                     <input placeholder={t('admin.tariffs_price')} type="number" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.price || ''} onChange={e => setForm({...form, price: e.target.value})} required />
-                    <input placeholder={t('admin.tariffs_currency')} className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.currency || 'RUB'} onChange={e => setForm({...form, currency: e.target.value})} />
+                    <input placeholder={t('admin.tariffs_currency')} className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} />
                     <input placeholder={t('admin.tariffs_duration')} type="number" className="bg-black p-4 rounded-2xl text-xs font-bold border border-white/5" value={form.duration_days || ''} onChange={e => setForm({...form, duration_days: e.target.value})} />
                 </div>
                 <div className="flex flex-wrap gap-2">
