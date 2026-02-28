@@ -132,7 +132,7 @@ async def create_order(tariff_id: int = Body(...), coupon_code: str = Body(None)
         yoo_payment = await PaymentService.create_yookassa_payment(
             amount=final_price, currency=tariff.currency,
             description=f"Subscription: {tariff.title}",
-            return_url="https://t.me/your_bot",
+            return_url=settings.web_app_url,
             metadata={"payment_id": new_payment.id, "tariff_id": tariff.id, "user_id": user_id}
         )
         new_payment.provider_payment_id = yoo_payment.id

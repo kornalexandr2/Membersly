@@ -27,7 +27,10 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
         setProfile(await pRes.json());
         const config = await cRes.json();
         setBotUsername(config.bot_username);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e); 
+        alert('Failed to connect to the server. Please try again later.');
+    }
   };
 
   useEffect(() => {
@@ -66,7 +69,16 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
     if (!token) return;
     fetch(`${apiUrl}/orders/access-link/${s_id}/${c_id}`, { headers: { 'Authorization': `Bearer ${token}` }})
         .then(res => res.json())
-        .then(data => { if(data.invite_link) window.location.href = data.invite_link; });
+        .then(data => { 
+            if(data.invite_link) {
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg && tg.openTelegramLink) {
+                    tg.openTelegramLink(data.invite_link);
+                } else {
+                    window.open(data.invite_link, '_blank');
+                }
+            } 
+        });
   };
 
   const toggleRenew = (s_id: number) => {
