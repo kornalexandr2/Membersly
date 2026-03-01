@@ -49,7 +49,17 @@ async def list_bots(db: AsyncSession = Depends(get_db)):
 
 @router.post("/bots")
 async def add_bot(bot_data: BotCreate, db: AsyncSession = Depends(get_db)):
-    new_bot = BotConfig(token=bot_data.token, title=bot_data.title)
+    actual_title = bot_data.title or "Unknown Bot"
+    bot = Bot(token=bot_data.token)
+    try:
+        me = await bot.get_me()
+        actual_title = f"{me.first_name} (@{me.username})" if me.username else me.first_name
+    except Exception:
+        pass
+    finally:
+        await bot.session.close()
+
+    new_bot = BotConfig(token=bot_data.token, title=actual_title)
     db.add(new_bot)
     await db.commit()
     return new_bot
@@ -76,12 +86,27 @@ async def delete_bot(bot_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/channels")
 async def list_channels(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Channel))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(select(Channel).options(selectinload(Channel.tariffs)))
     return result.scalars().all()
 
 @router.post("/channels")
 async def add_channel(chat_id: int = Body(...), title: str = Body(...), type: str = Body(...), welcome_text: Optional[str] = Body(None), pin_welcome: Optional[bool] = Body(False), db: AsyncSession = Depends(get_db)):
-    new_channel = Channel(telegram_chat_id=chat_id, title=title, type=type, welcome_text=welcome_text, pin_welcome=pin_welcome)
+    actual_title = title
+    bot_cfg = await db.execute(select(BotConfig).where(BotConfig.is_active == True).limit(1))
+    bot_record = bot_cfg.scalar_one_or_none()
+    if bot_record:
+        bot = Bot(token=bot_record.token)
+        try:
+            chat = await bot.get_chat(chat_id)
+            if chat.title:
+                actual_title = chat.title
+        except Exception:
+            pass
+        finally:
+            await bot.session.close()
+
+    new_channel = Channel(telegram_chat_id=chat_id, title=actual_title, type=type, welcome_text=welcome_text, pin_welcome=pin_welcome)
     db.add(new_channel)
     await db.commit()
     return new_channel

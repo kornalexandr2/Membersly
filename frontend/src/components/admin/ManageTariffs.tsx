@@ -41,12 +41,21 @@ export const ManageTariffs = ({ data, channels, onAction }: any) => {
 
             <div className="grid gap-4">
                 {data.map((t_item: any) => (
-                    <div key={t_item.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center group">
-                        <div className="space-y-1">
-                            <div className="font-black text-xl uppercase tracking-tighter text-white group-hover:text-blue-400 transition">{t_item.title}</div>
-                            <div className="text-[10px] text-neutral-500 font-bold uppercase">{t_item.price} {t_item.currency} • {t_item.duration_days} {t('admin.days')}</div>
+                    <div key={t_item.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center group gap-4 md:gap-0">
+                        <div className="space-y-2 w-full md:w-auto">
+                            <div>
+                                <div className="font-black text-xl uppercase tracking-tighter text-white group-hover:text-blue-400 transition">{t_item.title}</div>
+                                <div className="text-[10px] text-neutral-500 font-bold uppercase">{t_item.price} {t_item.currency} • {t_item.duration_days} {t('admin.days')}</div>
+                            </div>
+                            {t_item.channels && t_item.channels.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                    {t_item.channels.map((c: any) => (
+                                        <span key={c.id} className="text-[8px] bg-white/5 text-neutral-400 px-2 py-0.5 rounded-md font-black uppercase">{c.title}</span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 w-full md:w-auto justify-end">
                             <button onClick={() => { setEditing(t_item.id); setForm({ ...t_item, selectedChannels: t_item.channels?.map((c: any) => c.id) || [] }); }} className="text-white/40 font-black text-[10px] uppercase hover:text-white transition">{t('admin.edit')}</button>
                             <button onClick={() => onAction('DELETE', `tariffs/${t_item.id}`)} className="text-red-600/40 font-black text-[10px] uppercase hover:text-red-500 transition">{t('admin.delete')}</button>
                         </div>
