@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 export const ManageUsers = ({ data, onAction }: any) => {
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
-    const filtered = data.filter((u: any) => u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.telegram_id.toString().includes(search));
+    const filtered = data.filter((u: any) => u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.telegram_id?.toString().includes(search));
 
     return (
         <div className="space-y-6 animate-in fade-in">

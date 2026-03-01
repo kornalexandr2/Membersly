@@ -31,7 +31,7 @@ export const AdminDashboard = ({ token, apiUrl }: { token: string, apiUrl: strin
             ]);
             setDataList(await tRes.json());
             setChannels(await cRes.json());
-        } else if (view === 'settings') {
+        } else if (view === 'settings' || view === 'broadcast') {
             // Static view
         } else {
             const res = await fetch(`${apiUrl}/admin/${view}`, { headers });
