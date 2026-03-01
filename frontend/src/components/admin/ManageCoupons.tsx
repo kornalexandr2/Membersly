@@ -32,8 +32,8 @@ export const ManageCoupons = ({ data, onAction }: any) => {
                 </div>
                 
                 <button onClick={() => {
-                    if (form.code && form.val) {
-                        onAction('POST', 'coupons', {code: form.code, value: parseFloat(form.val), discount_type: form.discount_type, usage_limit: form.usage_limit, valid_until_days: form.valid_until_days});
+                    if (form.code && form.val !== undefined && form.val !== '') {
+                        onAction('POST', 'coupons', {code: form.code, value: parseFloat(form.val), discount_type: form.discount_type, usage_limit: form.usage_limit, valid_until_days: form.valid_until_days || null});
                         setForm({ discount_type: 'fixed', usage_limit: 100, code: '', val: '', valid_until_days: '' });
                     }
                 }} className="w-full md:w-auto bg-blue-600 px-8 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:bg-blue-500">{t('admin.coupons_generate')}</button>
