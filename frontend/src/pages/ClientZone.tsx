@@ -124,53 +124,61 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
     });
   };
 
+  const isTg = !!(window as any).Telegram?.WebApp?.initData;
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-blue-500/30 overflow-x-hidden">
-      {/* 1. HERO SECTION */}
-      <section className="relative pt-12 md:pt-20 pb-20 md:pb-32 px-4 md:px-6 overflow-hidden border-b border-white/5">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[600px] bg-blue-600/10 blur-[120px] rounded-full -z-10"></div>
-        <div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-10">
-          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase italic tracking-tighter leading-none animate-in fade-in slide-in-from-top-10 duration-1000 break-words">
-            {t('landing_hero_title')}
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-neutral-400 font-medium max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-10 delay-300 duration-1000 px-2">
-            {t('landing_hero_subtitle')}
-          </p>
-          <div className="pt-4 md:pt-6 animate-in fade-in zoom-in delay-500 duration-1000">
-            <button onClick={() => document.getElementById('app-main')?.scrollIntoView({ behavior: 'smooth' })} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 md:px-12 py-5 md:py-6 rounded-full font-black uppercase tracking-widest text-xs md:text-sm shadow-2xl shadow-blue-600/20 transition-all hover:scale-105 active:scale-95">
-              {t('landing_hero_cta')}
-            </button>
-          </div>
-        </div>
-      </section>
+      {!isTg && (
+        <>
+          {/* 1. HERO SECTION */}
+          <section className="relative pt-12 md:pt-20 pb-20 md:pb-32 px-4 md:px-6 overflow-hidden border-b border-white/5">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[600px] bg-blue-600/10 blur-[120px] rounded-full -z-10"></div>
+            <div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-10">
+              <h1 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase italic tracking-tighter leading-none animate-in fade-in slide-in-from-top-10 duration-1000 break-words">
+                {t('landing_hero_title')}
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-neutral-400 font-medium max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-10 delay-300 duration-1000 px-2">
+                {t('landing_hero_subtitle')}
+              </p>
+              <div className="pt-4 md:pt-6 animate-in fade-in zoom-in delay-500 duration-1000">
+                <button onClick={() => document.getElementById('app-main')?.scrollIntoView({ behavior: 'smooth' })} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 md:px-12 py-5 md:py-6 rounded-full font-black uppercase tracking-widest text-xs md:text-sm shadow-2xl shadow-blue-600/20 transition-all hover:scale-105 active:scale-95">
+                  {t('landing_hero_cta')}
+                </button>
+              </div>
+            </div>
+          </section>
 
-      {/* 2. FEATURES SECTION */}
-      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-950/50">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
-          <div className="space-y-3 md:space-y-4">
-            <div className="text-3xl md:text-4xl">🤖</div>
-            <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">{t('landing_feature_1_title')}</h3>
-            <p className="text-xs md:text-sm text-neutral-500 leading-relaxed px-4">{t('landing_feature_1_desc')}</p>
-          </div>
-          <div className="space-y-3 md:space-y-4">
-            <div className="text-3xl md:text-4xl">💳</div>
-            <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">{t('landing_feature_2_title')}</h3>
-            <p className="text-xs md:text-sm text-neutral-500 leading-relaxed px-4">{t('landing_feature_2_desc')}</p>
-          </div>
-          <div className="space-y-3 md:space-y-4">
-            <div className="text-3xl md:text-4xl">📊</div>
-            <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">{t('landing_feature_3_title')}</h3>
-            <p className="text-xs md:text-sm text-neutral-500 leading-relaxed px-4">{t('landing_feature_3_desc')}</p>
-          </div>
-        </div>
-      </section>
+          {/* 2. FEATURES SECTION */}
+          <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-950/50">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
+              <div className="space-y-3 md:space-y-4">
+                <div className="text-3xl md:text-4xl">🤖</div>
+                <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">{t('landing_feature_1_title')}</h3>
+                <p className="text-xs md:text-sm text-neutral-500 leading-relaxed px-4">{t('landing_feature_1_desc')}</p>
+              </div>
+              <div className="space-y-3 md:space-y-4">
+                <div className="text-3xl md:text-4xl">💳</div>
+                <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">{t('landing_feature_2_title')}</h3>
+                <p className="text-xs md:text-sm text-neutral-500 leading-relaxed px-4">{t('landing_feature_2_desc')}</p>
+              </div>
+              <div className="space-y-3 md:space-y-4">
+                <div className="text-3xl md:text-4xl">📊</div>
+                <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">{t('landing_feature_3_title')}</h3>
+                <p className="text-xs md:text-sm text-neutral-500 leading-relaxed px-4">{t('landing_feature_3_desc')}</p>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       {/* 3. FUNCTIONAL APP SECTION */}
-      <section id="app-main" className="py-16 md:py-24 px-4 max-w-3xl mx-auto space-y-8 md:space-y-12">
-        <div className="text-center space-y-2 mb-8 md:mb-16">
-          <h2 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] md:tracking-[0.5em] text-blue-500 italic">User Terminal</h2>
-          <div className="h-1 w-16 md:w-20 bg-blue-600 mx-auto rounded-full"></div>
-        </div>
+      <section id="app-main" className={`px-4 max-w-3xl mx-auto space-y-8 md:space-y-12 ${isTg ? 'py-6 md:py-10' : 'py-16 md:py-24'}`}>
+        {!isTg && (
+          <div className="text-center space-y-2 mb-8 md:mb-16">
+            <h2 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] md:tracking-[0.5em] text-blue-500 italic">User Terminal</h2>
+            <div className="h-1 w-16 md:w-20 bg-blue-600 mx-auto rounded-full"></div>
+          </div>
+        )}
 
         {/* Profile Card */}
         <div className="flex flex-col sm:flex-row justify-between items-center bg-neutral-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl gap-6 md:gap-8">
