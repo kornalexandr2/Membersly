@@ -228,6 +228,7 @@ class CouponCreate(BaseModel):
     discount_type: str
     value: float
     usage_limit: Optional[int] = 1
+    valid_until_days: Optional[int] = None
 
 @router.get("/coupons")
 async def list_coupons(db: AsyncSession = Depends(get_db)):
@@ -238,7 +239,17 @@ async def list_coupons(db: AsyncSession = Depends(get_db)):
 @router.post("/coupons")
 async def add_coupon(data: CouponCreate, db: AsyncSession = Depends(get_db)):
     from app.models.models import Coupon
-    new_c = Coupon(code=data.code, discount_type=data.discount_type, value=data.value, usage_limit=data.usage_limit)
+    valid_until_date = None
+    if data.valid_until_days is not None and data.valid_until_days > 0:
+        valid_until_date = datetime.now() + timedelta(days=data.valid_until_days)
+    
+    new_c = Coupon(
+        code=data.code, 
+        discount_type=data.discount_type, 
+        value=data.value, 
+        usage_limit=data.usage_limit,
+        valid_until=valid_until_date
+    )
     db.add(new_c); await db.commit(); return new_c
 
 @router.delete("/coupons/{coupon_id}")
