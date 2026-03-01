@@ -17,12 +17,12 @@ export const ManageBots = ({ data, onAction }: any) => {
                     </div>
                 )}
                 {data.map((b: any) => (
-                    <div key={b.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center hover:bg-white/[0.01] transition-all group">
-                        <div className="truncate pr-8">
+                    <div key={b.id} className="p-4 md:p-6 bg-neutral-900 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-white/[0.01] transition-all group gap-4 md:gap-0">
+                        <div className="w-full md:w-auto md:pr-8">
                             <span className="text-[10px] font-black text-neutral-600 block mb-1 uppercase tracking-widest italic">{t('admin.bots_active_signal')}</span>
-                            <span className="text-xs font-mono text-neutral-400 group-hover:text-blue-400 transition-colors">{b.token.substring(0, 40)}...</span>
+                            <span className="text-[10px] md:text-xs font-mono text-neutral-400 group-hover:text-blue-400 transition-colors break-all block">{b.token}</span>
                         </div>
-                        <button onClick={() => onAction('DELETE', `bots/${b.id}`)} className="text-red-600 font-black text-[10px] uppercase border border-red-600/10 px-4 py-2 rounded-xl hover:bg-red-600 hover:text-white transition-all">{t('admin.delete')}</button>
+                        <button onClick={() => onAction('DELETE', `bots/${b.id}`)} className="w-full md:w-auto text-red-600 font-black text-[10px] uppercase border border-red-600/10 px-4 py-2 md:py-3 rounded-xl hover:bg-red-600 hover:text-white transition-all">{t('admin.delete')}</button>
                     </div>
                 ))}
             </div>

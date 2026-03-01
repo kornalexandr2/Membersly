@@ -58,16 +58,16 @@ export const ManageChannels = ({ data, onAction }: any) => {
             </form>
             <div className="grid gap-3">
                 {data.map((c: any) => (
-                    <div key={c.id} className="p-6 bg-neutral-900 rounded-[2rem] border border-white/5 flex justify-between items-center group">
-                        <div>
-                            <div className="flex items-center gap-2">
+                    <div key={c.id} className="p-4 md:p-6 bg-neutral-900 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center group gap-4 md:gap-0">
+                        <div className="w-full md:w-auto break-words">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <div className="font-black text-sm uppercase tracking-tighter group-hover:text-blue-400 transition">{c.title}</div>
                                 <span className="bg-white/10 px-2 py-0.5 rounded-md text-[8px] uppercase font-black text-neutral-400">{c.type}</span>
                             </div>
-                            <div className="text-[10px] text-neutral-500 font-bold mt-1">ID: {c.telegram_chat_id}</div>
+                            <div className="text-[10px] text-neutral-500 font-bold mt-1 break-all">ID: {c.telegram_chat_id}</div>
                             {c.welcome_text && <div className="text-[9px] text-green-500 font-bold uppercase mt-1">{t('admin.channels_welcome_active')} {c.pin_welcome && `(${t('admin.channels_pinned')})`}</div>}
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 w-full md:w-auto justify-end">
                             <button onClick={() => { setEditing(c.id); setForm(c); }} className="text-white/40 font-black text-[10px] uppercase hover:text-white transition">{t('admin.edit')}</button>
                             <button onClick={() => onAction('DELETE', `channels/${c.id}`)} className="text-red-600 font-black text-[10px] uppercase border border-red-600/10 px-4 py-2 rounded-xl hover:bg-red-600 hover:text-white transition-all">{t('admin.channels_unlink')}</button>
                         </div>
