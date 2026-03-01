@@ -59,17 +59,33 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ tariff_id: t_id, use_balance: true, coupon_code: coupon })
-    }).then(res => res.json()).then(data => { 
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.detail || 'Payment initialization failed');
+            return;
+        }
         if(data.payment_url) window.location.href = data.payment_url; 
-        else if (data.status === 'succeeded') { alert('Activated!'); fetchData(); }
+        else if (data.status === 'succeeded') { 
+            alert('Activated successfully!'); 
+            setCoupon('');
+            fetchData(); 
+        }
+    }).catch(e => {
+        console.error(e);
+        alert('Network error. Try again.');
     });
   };
 
   const getAccess = (s_id: number, c_id: number) => {
     if (!token) return;
     fetch(`${apiUrl}/orders/access-link/${s_id}/${c_id}`, { headers: { 'Authorization': `Bearer ${token}` }})
-        .then(res => res.json())
-        .then(data => { 
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.detail || 'Failed to generate access link');
+                return;
+            }
             if(data.invite_link) {
                 const tg = (window as any).Telegram?.WebApp;
                 if (tg && tg.openTelegramLink) {
@@ -78,6 +94,9 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
                     window.open(data.invite_link, '_blank');
                 }
             } 
+        }).catch(e => {
+            console.error(e);
+            alert('Network error while generating link.');
         });
   };
 
@@ -86,7 +105,23 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
     fetch(`${apiUrl}/orders/subscriptions/${s_id}/toggle-renew`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
-    }).then(() => fetchData());
+    }).then(async res => {
+        if (!res.ok) {
+            const data = await res.json();
+            alert(data.detail || 'Failed to toggle auto-renew');
+            return;
+        }
+        fetchData();
+    }).catch(e => console.error(e));
+  };
+
+  const copyRefLink = () => {
+    const link = `t.me/${botUsername}?start=ref_${tgUser?.id || profile?.telegram_id || ''}`;
+    navigator.clipboard.writeText(link).then(() => {
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg && tg.showAlert) tg.showAlert('Referral link copied!');
+        else alert('Referral link copied!');
+    });
   };
 
   return (
@@ -145,7 +180,7 @@ export const ClientZone = ({ apiUrl }: { apiUrl: string }) => {
             </div>
             <div className="text-center sm:text-right w-full sm:w-auto">
               <div className="text-[10px] md:text-xs font-black uppercase text-neutral-400 mb-1 md:mb-2 tracking-widest">{t('client_ref_link')}</div>
-              <div className="text-[10px] md:text-xs font-mono text-blue-400 bg-black/50 px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl border border-white/5 break-all w-full select-all">t.me/{botUsername}?start=ref_{tgUser?.id || profile?.telegram_id || 'ERROR'}</div>
+              <div onClick={copyRefLink} className="text-[10px] md:text-xs font-mono text-blue-400 bg-black/50 px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl border border-white/5 break-all w-full cursor-pointer hover:bg-blue-600/10 hover:border-blue-500/30 transition-all active:scale-95">t.me/{botUsername}?start=ref_{tgUser?.id || profile?.telegram_id || 'ERROR'}</div>
             </div>
         </div>
 
